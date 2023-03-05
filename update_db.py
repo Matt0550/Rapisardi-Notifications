@@ -26,12 +26,12 @@ ADMIN_SUMMARY = True
 # Setup SMTP server
 smtp_server = "smtp.yandex.com"
 smtp_port = 465
-smtp_user = "rapisardi.updates@matt05.ml"
-smtp_pass = os.environ.get("SMTP_PASS")
+smtp_user = "rapisardi.updates@studyapp.ml"
+smtp_pass = os.environ.get("SMTP_PASS", "xJs@Ln^Txyx3N$DFLS5A")
 # Check if the SMTP password is set
-# if smtp_pass == None:
-#     print("SMTP password not set")
-#     exit()
+if smtp_pass == None:
+    print("SMTP password not set")
+    exit()
 
 def sendEmail(to, subject, body, html=False):
     # Edit the mittent
@@ -52,19 +52,27 @@ def sendEmail(to, subject, body, html=False):
     server.quit()
 
 
-def getUserClassroomId(userId):
-    sql = "SELECT classroom_id FROM users WHERE id = " + str(userId)
+def getUserDataFromDB(userId):
+    sql = "SELECT * FROM users WHERE id = " + str(userId)
     try:
         cursor.execute(sql)
         results = cursor.fetchall()
-        classroomId = results[0][0]
+        return results[0]
     except:
         print("Error: unable to fetch data")
         return None
-    return classroomId
+
 
 def getUserAndClassroomData(userId):
-    classroomId = getUserClassroomId(userId)
+    userApiKey = getUserDataFromDB(userId)[1]
+
+    # Make a request to api.studyapp.ml/user/info/partial with header apiKey
+    r = requests.get("https://api.studyapp.ml/user/info/partial", headers={"apiKey": userApiKey})
+
+    # Get the data
+    data = r.json()
+
+    return data["message"]
 
 def getTodayUpdates():
     url = "https://www.rapisardidavinci.edu.it/sost/app/sostituzioni.php"
@@ -77,7 +85,6 @@ def getTodayUpdates():
     # Get only the end 11 characters
     date = date[-11:-1]
     
-
     # From second tr insert into a list all the td starting from the second
     ore = [td.text for td in table.find_all("tr")[1].find_all("td")[1:]]
     # Insert into a list all the tr starting from the third
@@ -135,32 +142,86 @@ def getNextUpdates():
 
 adminSummary = []
 def checkUpdates():
-    pass
-
-def sendMail(userId, movieData):
-    # Get the user email
-    sql = "SELECT email FROM users WHERE id = " + userId
+    # Get today updates if the hour is between 8 and 14 
+    if datetime.now().hour >= 8 and datetime.now().hour <= 14:
+        updates = getTodayUpdates()
+    else:
+        updates = getNextUpdates()
+    
+    # Get all the users
+    sql = "SELECT * FROM users"
     try:
         cursor.execute(sql)
         results = cursor.fetchall()
-        email = results[0][0]
-    except:
+        for user in results:
+            # Get the user data
+            userData = getUserAndClassroomData(user[0])
+            # Get the user classname
+            userClass = userData["classroom"]["name"]
+            print("Checking " + user[2] + " for " + userClass)
+
+            # Check if the user has the same class as the update
+            for update in updates:
+                # Make a table with the data
+                table = "<table><tr><th>Ora</th><th>Sostituzione</th></tr>"
+                for i in range(len(update["ore"])):
+                    table += "<tr><td>" + update["ore"][i] + "</td><td>" + update["sostituzioni"][i] + "</td></tr>"
+                table += "</table>"
+                # Send the mail
+                sendEmailToUser(user, userData["user"]["email"], table, update["sostituzioni"], update["date"])
+                # Add the user to the admin summary
+                adminSummary.append(user[2] + " - " + update["date"])
+
+    except Exception as e:
         print("Error: unable to fetch data")
+        print(e)
         return None
-    # Send mail
-    print("Sending mail to " + email + " for " + movieData["path"])
-    # To episodes split the string by , and for each episode add a <br>
-    movieData["episodes"] = movieData["episodes"].replace(", ", "<br>")
-
-    if movieData["title"] == "" or movieData["title"] == None:
-        movieData["title"] = "Nuovi episodi aggiunti"
-
-    subject = movieData["title"] + " - Aggiornamento"
     
-    body = "Ciao, <br> <br> nella serie <b>" + movieData["title"] + "</b> sono stati aggiunti i seguenti episodi: <br> <br>" + movieData["episodes"] + "<br> <br> Clicca <a href='"+movieData["link"] + "'>qui</a> per andare alla pagina della serie. <br> <br> Cordiali saluti, <br> Matt05, rapisardi Updates"
-    sendEmail(email, subject, body, True)
-    adminSummary.append("Sent " + movieData["title"] + " to " + email)
-    
+def sendEmailToUser(userDBData, email, table, array, date):
+    print(array)
+    lastSent = userDBData[4]
+    lastContent = userDBData[5]
+
+    # Check if the email has already been sent but if the content is different send it again
+    if lastSent != None and lastContent != None:
+        if lastSent.strftime("%Y-%m-%d") == datetime.now().strftime("%Y-%m-%d") and lastContent == str(array):
+            print("Email already sent")
+            return None
+        else:
+            # Send the email
+            message = "Ciao, le sostituzioni in data " + date + " sono state aggiornate: <br> <br>" + table + "<br> <br> Buona giornata!"
+            sendEmail(email, "Aggiornamento sostituzioni", message, True)
+
+            # Update the last sent date and content
+            sql = 'UPDATE users SET last_notification = "' + str(datetime.now()) + '", last_sostituzioni = "' + str(array) + '" WHERE id = ' + str(userDBData[0]) + ';'
+            try:
+                cursor.execute(sql)
+                db.commit()
+                print("Updated user " + userDBData[2])
+                return True
+            except Exception as e:
+                print("Error: unable to update user")
+                print(e)
+                return None
+    else:
+        # Send the email
+        message = "Ciao, le sostituzioni in data " + date + " sono state aggiornate: <br> <br>" + table + "<br> <br> Buona giornata!"
+        sendEmail(email, "Aggiornamento sostituzioni", message, True)
+
+        # Update the last sent date and content
+        sql = 'UPDATE users SET last_notification = "' + str(datetime.now()) + '", last_sostituzioni = "' + str(array) + '" WHERE id = ' + str(userDBData[0]) + ';'
+        try:
+            cursor.execute(sql)
+            db.commit()
+            print("Updated user " + userDBData[2])
+            return True
+        except Exception as e:
+            print("Error: unable to update user")
+            print(e)
+            return None
+
+
+
 def sendAdminSummary():
     print("Sending admin summary")
     body = "Riepilogo aggiornamenti: <br> <br> " + "<br> <br>".join(adminSummary)
@@ -171,4 +232,4 @@ def main():
     sendAdminSummary()
 
 if __name__ == "__main__":
-    print(getTodayUpdates())
+    checkUpdates()
