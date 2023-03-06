@@ -116,7 +116,6 @@ def getNextUpdates():
     date = table.find("tr").find("td").text
     # Get only the end 11 characters
     date = date[-11:-1]
-    
 
     # From second tr insert into a list all the td starting from the second
     ore = [td.text for td in table.find_all("tr")[1].find_all("td")[1:]]
@@ -139,7 +138,6 @@ def getNextUpdates():
         result.append(data)
     return result
 
-
 adminSummary = []
 def checkUpdates():
     # Get today updates if the hour is between 8 and 14 
@@ -158,10 +156,14 @@ def checkUpdates():
             userData = getUserAndClassroomData(user[0])
             # Get the user classname
             userClass = userData["classroom"]["name"]
-            print("Checking " + user[2] + " for " + userClass)
+            print("Checking " + str(user[0]) + " for " + userClass)
 
             # Check if the user has the same class as the update
             for update in updates:
+                print("Checking " + update["classe"] + " for " + userClass)
+                if update["classe"].lower() != userClass.lower():
+                    continue
+                print("Found update for " + userClass)
                 # Make a table with the data
                 table = "<table><tr><th>Ora</th><th>Sostituzione</th></tr>"
                 for i in range(len(update["ore"])):
@@ -170,7 +172,7 @@ def checkUpdates():
                 # Send the mail
                 sendEmailToUser(user, userData["user"]["email"], table, update["sostituzioni"], update["date"])
                 # Add the user to the admin summary
-                adminSummary.append(user[2] + " - " + update["date"])
+                adminSummary.append(str(user[0]) + " - " + update["date"])
 
     except Exception as e:
         print("Error: unable to fetch data")
@@ -179,8 +181,8 @@ def checkUpdates():
     
 def sendEmailToUser(userDBData, email, table, array, date):
     print(array)
-    lastSent = userDBData[4]
-    lastContent = userDBData[5]
+    lastSent = userDBData[2]
+    lastContent = userDBData[3]
 
     # Check if the email has already been sent but if the content is different send it again
     if lastSent != None and lastContent != None:
@@ -197,7 +199,7 @@ def sendEmailToUser(userDBData, email, table, array, date):
             try:
                 cursor.execute(sql)
                 db.commit()
-                print("Updated user " + userDBData[2])
+                print("Updated user " + str(userDBData[0]))
                 return True
             except Exception as e:
                 print("Error: unable to update user")
@@ -213,14 +215,12 @@ def sendEmailToUser(userDBData, email, table, array, date):
         try:
             cursor.execute(sql)
             db.commit()
-            print("Updated user " + userDBData[2])
+            print("Updated user " + str(userDBData[0]))
             return True
         except Exception as e:
             print("Error: unable to update user")
             print(e)
             return None
-
-
 
 def sendAdminSummary():
     print("Sending admin summary")
