@@ -9,6 +9,7 @@ import os
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.base import MIMEBase
+from Sostituzioni import Sostituzioni
 
 # Check os
 if os.name == "nt": # Windows
@@ -74,77 +75,14 @@ def getUserAndClassroomData(userId):
 
     return data["message"]
 
-def getTodayUpdates():
-    url = "https://www.rapisardidavinci.edu.it/sost/app/sostituzioni.php"
-    page = requests.get(url)
-    soup = BeautifulSoup(page.content, 'html.parser')
-    # Get the table inside the div with id LayoutDiv2
-    table = soup.find("div", {"id": "LayoutDiv2"}).find("table")
-    # From first tr get the text of first td
-    date = table.find("tr").find("td").text
-    # Get only the end 11 characters
-    date = date[-11:-1]
-    
-    # From second tr insert into a list all the td starting from the second
-    ore = [td.text for td in table.find_all("tr")[1].find_all("td")[1:]]
-    # Insert into a list all the tr starting from the third
-    rows = table.find_all("tr")[2:-1]
-    
-    result = []
-    for row in rows:
-        # Get the first td and the text inside
-        classe = row.find("td").text
-        # Get all the td starting from the second
-        sostituzioni = [td.text for td in row.find_all("td")[1:]]
-        # Create a dictionary with the data
-        data = {
-            "date": date,
-            "ore": ore,
-            "classe": classe,
-            "sostituzioni": sostituzioni
-        }
-        result.append(data)
-    return result
-
-def getNextUpdates():
-    url = "https://www.rapisardidavinci.edu.it/sost/app/sostituzioni.php"
-    page = requests.get(url)
-    soup = BeautifulSoup(page.content, 'html.parser')
-    # Get the table inside the div with id LayoutDiv2
-    table = soup.find("div", {"id": "LayoutDiv3"}).find("table")
-    # From first tr get the text of first td
-    date = table.find("tr").find("td").text
-    # Get only the end 11 characters
-    date = date[-11:-1]
-
-    # From second tr insert into a list all the td starting from the second
-    ore = [td.text for td in table.find_all("tr")[1].find_all("td")[1:]]
-    # Insert into a list all the tr starting from the third
-    rows = table.find_all("tr")[2:-1]
-    
-    result = []
-    for row in rows:
-        # Get the first td and the text inside
-        classe = row.find("td").text
-        # Get all the td starting from the second
-        sostituzioni = [td.text for td in row.find_all("td")[1:]]
-        # Create a dictionary with the data
-        data = {
-            "date": date,
-            "ore": ore,
-            "classe": classe,
-            "sostituzioni": sostituzioni
-        }
-        result.append(data)
-    return result
-
 adminSummary = []
 def checkUpdates():
+    sostituzioni = Sostituzioni("https://www.rapisardidavinci.edu.it/sost/app/sostituzioni.php")
     # Get today updates if the hour is between 8 and 14 
     if datetime.now().hour >= 8 and datetime.now().hour <= 14:
-        updates = getTodayUpdates()
+        updates = sostituzioni.getTodayUpdates()
     else:
-        updates = getNextUpdates()
+        updates = sostituzioni.getNextUpdates()
     
     # Get all the users
     sql = "SELECT * FROM users"
@@ -170,7 +108,7 @@ def checkUpdates():
                     table += "<tr><td>" + update["ore"][i] + "</td><td>" + update["sostituzioni"][i] + "</td></tr>"
                 table += "</table>"
                 # Send the mail
-                sendEmailToUser(user, userData["user"]["email"], table, update["sostituzioni"], update["date"])
+                sendEmailToUser(user, userData["user"]["email"], table, update["sostituzioni"], update["date"], userClass)
                 # Add the user to the admin summary
                 adminSummary.append(str(user[0]) + " - " + update["date"])
 
@@ -179,35 +117,18 @@ def checkUpdates():
         print(e)
         return None
     
-def sendEmailToUser(userDBData, email, table, array, date):
+def sendEmailToUser(userDBData, email, table, array, date, userClass):
     print(array)
     lastSent = userDBData[2]
     lastContent = userDBData[3]
 
     # Check if the email has already been sent but if the content is different send it again
-    if lastSent != None and lastContent != None:
-        if lastSent.strftime("%Y-%m-%d") == datetime.now().strftime("%Y-%m-%d") and lastContent == str(array):
-            print("Email already sent")
-            return None
-        else:
-            # Send the email
-            message = "Ciao, le sostituzioni in data " + date + " sono state aggiornate: <br> <br>" + table + "<br> <br> Buona giornata!"
-            sendEmail(email, "Aggiornamento sostituzioni", message, True)
-
-            # Update the last sent date and content
-            sql = 'UPDATE users SET last_notification = "' + str(datetime.now()) + '", last_sostituzioni = "' + str(array) + '" WHERE id = ' + str(userDBData[0]) + ';'
-            try:
-                cursor.execute(sql)
-                db.commit()
-                print("Updated user " + str(userDBData[0]))
-                return True
-            except Exception as e:
-                print("Error: unable to update user")
-                print(e)
-                return None
+    if lastSent.strftime("%Y-%m-%d") == datetime.now().strftime("%Y-%m-%d") and lastContent == str(array):
+        print("Email already sent")
+        return None
     else:
         # Send the email
-        message = "Ciao, le sostituzioni in data " + date + " sono state aggiornate: <br> <br>" + table + "<br> <br> Buona giornata!"
+        message = "Ciao, le sostituzioni in data " + date + " della classe " + userClass + " sono state aggiornate: <br> <br>" + table
         sendEmail(email, "Aggiornamento sostituzioni", message, True)
 
         # Update the last sent date and content
@@ -221,7 +142,7 @@ def sendEmailToUser(userDBData, email, table, array, date):
             print("Error: unable to update user")
             print(e)
             return None
-
+    
 def sendAdminSummary():
     print("Sending admin summary")
     body = "Riepilogo aggiornamenti: <br> <br> " + "<br> <br>".join(adminSummary)

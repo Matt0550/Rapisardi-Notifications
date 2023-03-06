@@ -1,0 +1,88 @@
+# FastAPI
+from starlette.exceptions import HTTPException as StarletteHTTPException
+from fastapi import FastAPI, Request, Response, status
+from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.exception_handlers import http_exception_handler
+from fastapi.exceptions import RequestValidationError
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
+
+from Sostituzioni import Sostituzioni
+# Init 
+app = FastAPI()
+limiter = Limiter(key_func=get_remote_address, default_limits=["3/5seconds", "10/minute"])
+
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+origins = ["http://127.0.0.1/", "http://localhost", "http://192.168.1.75", "*"]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+app.add_middleware(SlowAPIMiddleware)
+
+
+# Handle the 404 error. Use HTTP_exception_handler to handle the error
+@app.exception_handler(StarletteHTTPException)
+async def my_custom_exception_handler(request: Request, exc: StarletteHTTPException):
+    if exc.status_code == 404:
+        return JSONResponse(content={"message": "Not found", "status": "error", "code": exc.status_code}, status_code=exc.status_code)
+    elif exc.status_code == 405:
+        return JSONResponse(content={"message": "Method not allowed", "status": "error", "code": exc.status_code}, status_code=exc.status_code)
+    else:
+        # Just use FastAPI's built-in handler for other errors
+        return await http_exception_handler(request, exc)
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
+    print(exc.errors())
+
+    if exc.errors()[0]["type"] == "value_error.any_str.max_length":
+        limit = str(exc.errors()[0]["ctx"]["limit_value"])
+        return JSONResponse(content={"message": "The value entered is too long. Max length is " + limit, "status": "error", "code": status_code}, status_code=status_code)
+    elif exc.errors()[0]["type"] == "value_error.missing":
+        missing = []
+        for error in exc.errors():
+            try:
+                missing.append(error["loc"][1])
+            except:
+                missing.append(error["loc"][0])
+
+        return JSONResponse(content={"message": "One or more fields are missing: " + str(missing), "status": "error", "code": status_code}, status_code=status_code)
+    else:
+        return JSONResponse(content={"message": exc.errors()[0]["msg"], "status": "error", "code": status_code}, status_code=status_code)
+    
+@app.exception_handler(RateLimitExceeded)
+async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
+    return JSONResponse(content={"message": "Rate limit exceeded. Try again in " + str(exc.retry_after) + " seconds", "status": "error", "code": 429}, status_code=429)
+
+# Routes
+@app.get("/sostituzioni/margherita/today/{classe}", tags=["Sostituzioni"])
+@limiter.limit("1/second")
+def sostituzioni_margherita_today(request: Request, response: Response, classe: str):
+    # Check if the class is valid
+    if classe != None:
+        sostituzioni = Sostituzioni("https://www.rapisardidavinci.edu.it/sost/app/sostituzioni.php")
+        return sostituzioni.getTodayUpdatesFromClass(classe)
+    
+    return JSONResponse(content={"message": "Invalid class", "status": "error", "code": 400}, status_code=400)
+
+@app.get("/sostituzioni/margherita/next/{classe}", tags=["Sostituzioni"])
+@limiter.limit("1/second")
+def sostituzioni_margherita_next(request: Request, response: Response, classe: str):
+    # Check if the class is valid
+    if classe != None:
+        sostituzioni = Sostituzioni("https://www.rapisardidavinci.edu.it/sost/app/sostituzioni.php")
+        return sostituzioni.getNextUpdatesFromClass(classe)
+    
+    return JSONResponse(content={"message": "Invalid class", "status": "error", "code": 400}, status_code=400)
