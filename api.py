@@ -73,8 +73,12 @@ def sostituzioni_margherita_today(request: Request, response: Response, classe: 
     # Check if the class is valid
     if classe != None:
         sostituzioni = Sostituzioni("https://www.rapisardidavinci.edu.it/sost/app/sostituzioni.php")
-        return sostituzioni.getTodayUpdatesFromClass(classe)
-    
+        updates = sostituzioni.getTodayUpdatesFromClass(classe)
+        if updates != "null" and updates != None:
+            return JSONResponse(content={"message": updates, "status": "success", "code": 200}, status_code=200)
+        else:
+            return JSONResponse(content={"message": "No updates", "status": "error", "code": 404}, status_code=404)
+
     return JSONResponse(content={"message": "Invalid class", "status": "error", "code": 400}, status_code=400)
 
 @app.get("/sostituzioni/margherita/next/{classe}", tags=["Sostituzioni"])
