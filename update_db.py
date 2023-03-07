@@ -1,5 +1,3 @@
-# Connect to mysql
-
 import MySQLdb
 import requests
 from bs4 import BeautifulSoup
@@ -9,28 +7,26 @@ import os
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.base import MIMEBase
+from dotenv import load_dotenv
 from Sostituzioni import Sostituzioni
 
-# Check os
-if os.name == "nt": # Windows
-    # Open database connection
-    db = MySQLdb.connect("192.168.1.21","rapisardi", "TwEm-z6GY.VWbVaB", "rapisardi_notifications")
-else: # Linux
-    # Open database connection
-    db = MySQLdb.connect("0.0.0.0","root", "", "rapisardi_notifications")
+load_dotenv()
+
+
+# Open database connection
+db = MySQLdb.connect(os.getenv("MYSQL_HOST"), os.getenv("MYSQL_USERNAME"), os.getenv("MYSQL_PASSWORD"), os.getenv("MYSQL_DATABASE"), int(os.getenv("MYSQL_PORT")))
 
 # prepare a cursor object using cursor() method
 cursor = db.cursor()
 
-ADMIN_SUMMARY = True
-
 # Setup SMTP server
-smtp_server = "smtp.yandex.com"
-smtp_port = 465
-smtp_user = "rapisardi.updates@studyapp.ml"
-smtp_pass = os.environ.get("SMTP_PASS", "xJs@Ln^Txyx3N$DFLS5A")
+smtp_server = os.getenv("SMTP_HOST")
+smtp_port = int(os.getenv("SMTP_PORT"))
+smtp_user = os.getenv("SMTP_USERNAME")
+smtp_pass = os.getenv("SMTP_PASSWORD")
+
 # Check if the SMTP password is set
-if smtp_pass == None:
+if smtp_pass == None or smtp_pass == "":
     print("SMTP password not set")
     exit()
 
@@ -75,7 +71,6 @@ def getUserAndClassroomData(userId):
 
     return data["message"]
 
-adminSummary = []
 def checkUpdates():
     sostituzioni = Sostituzioni("https://www.rapisardidavinci.edu.it/sost/app/sostituzioni.php")
     # Get today updates if the hour is between 8 and 14 
@@ -109,8 +104,6 @@ def checkUpdates():
                 table += "</table>"
                 # Send the mail
                 sendEmailToUser(user, userData["user"]["email"], table, update["sostituzioni"], update["date"], userClass)
-                # Add the user to the admin summary
-                adminSummary.append(str(user[0]) + " - " + update["date"])
 
     except Exception as e:
         print("Error: unable to fetch data")
@@ -142,15 +135,9 @@ def sendEmailToUser(userDBData, email, table, array, date, userClass):
             print("Error: unable to update user")
             print(e)
             return None
-    
-def sendAdminSummary():
-    print("Sending admin summary")
-    body = "Riepilogo aggiornamenti: <br> <br> " + "<br> <br>".join(adminSummary)
-    sendEmail("pchpmatt05@gmail.com", "Riepilogo aggiornamenti", body, True)
 
 def main():
     checkUpdates()
-    sendAdminSummary()
 
 if __name__ == "__main__":
-    checkUpdates()
+    main()

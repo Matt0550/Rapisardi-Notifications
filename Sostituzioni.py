@@ -1,3 +1,9 @@
+###########################################################
+# ITET Rapisardi da Vinci - Sostituzioni API (Unofficial) #
+###########################################################
+
+# Created by: @Matt0550 (GitHub)
+
 import requests
 from bs4 import BeautifulSoup
 
@@ -71,6 +77,9 @@ class Sostituzioni:
             result.append(data)
         return result
     
+    def getAllUpdates(self):
+        return {"today": self.getTodayUpdates(), "next": self.getNextUpdates()}
+
     def getTodayUpdatesFromClass(self, classe):
         updates = self.getTodayUpdates()
         for update in updates:
@@ -83,5 +92,4 @@ class Sostituzioni:
         for update in updates:
             if update["classe"].lower() == classe.lower():
                 return update
-        return None
-    
+        return None    

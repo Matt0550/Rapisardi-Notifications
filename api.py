@@ -1,3 +1,9 @@
+###########################################################
+# ITET Rapisardi da Vinci - Sostituzioni API (Unofficial) #
+###########################################################
+
+# Created by: @Matt0550 (GitHub)
+
 # FastAPI
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from fastapi import FastAPI, Request, Response, status
@@ -66,7 +72,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
     return JSONResponse(content={"message": "Rate limit exceeded. Try again in " + str(exc.retry_after) + " seconds", "status": "error", "code": 429}, status_code=429)
 
-# Routes
+# Routes margherita
 @app.get("/sostituzioni/margherita/today/{classe}", tags=["Sostituzioni"])
 @limiter.limit("1/second")
 def sostituzioni_margherita_today(request: Request, response: Response, classe: str):
@@ -90,3 +96,85 @@ def sostituzioni_margherita_next(request: Request, response: Response, classe: s
         return sostituzioni.getNextUpdatesFromClass(classe)
     
     return JSONResponse(content={"message": "Invalid class", "status": "error", "code": 400}, status_code=400)
+
+
+# Routes turati
+@app.get("/sostituzioni/turati/today/{classe}", tags=["Sostituzioni"])
+@limiter.limit("1/second")
+def sostituzioni_turati_today(request: Request, response: Response, classe: str):
+    # Check if the class is valid
+    if classe != None:
+        sostituzioni = Sostituzioni("https://www.rapisardidavinci.edu.it/sost/app/sostituzioni2.php")
+        updates = sostituzioni.getTodayUpdatesFromClass(classe)
+        if updates != "null" and updates != None:
+            return JSONResponse(content={"message": updates, "status": "success", "code": 200}, status_code=200)
+        else:
+            return JSONResponse(content={"message": "No updates", "status": "error", "code": 404}, status_code=404)
+
+    return JSONResponse(content={"message": "Invalid class", "status": "error", "code": 400}, status_code=400)
+
+@app.get("/sostituzioni/turati/next/{classe}", tags=["Sostituzioni"])
+@limiter.limit("1/second")
+def sostituzioni_turati_next(request: Request, response: Response, classe: str):
+    # Check if the class is valid
+    if classe != None:
+        sostituzioni = Sostituzioni("https://www.rapisardidavinci.edu.it/sost/app/sostituzioni2.php")
+        return sostituzioni.getNextUpdatesFromClass(classe)
+    
+    return JSONResponse(content={"message": "Invalid class", "status": "error", "code": 400}, status_code=400)
+
+# Routes serale
+@app.get("/sostituzioni/serale/today/{classe}", tags=["Sostituzioni"])
+@limiter.limit("1/second")
+def sostituzioni_serale_today(request: Request, response: Response, classe: str):
+    # Check if the class is valid
+    if classe != None:
+        sostituzioni = Sostituzioni("https://www.rapisardidavinci.edu.it/sost/app/sostituzioni3.php")
+        updates = sostituzioni.getTodayUpdatesFromClass(classe)
+        if updates != "null" and updates != None:
+            return JSONResponse(content={"message": updates, "status": "success", "code": 200}, status_code=200)
+        else:
+            return JSONResponse(content={"message": "No updates", "status": "error", "code": 404}, status_code=404)
+
+    return JSONResponse(content={"message": "Invalid class", "status": "error", "code": 400}, status_code=400)
+
+@app.get("/sostituzioni/serale/next/{classe}", tags=["Sostituzioni"])
+@limiter.limit("1/second")
+def sostituzioni_serale_next(request: Request, response: Response, classe: str):
+    # Check if the class is valid
+    if classe != None:
+        sostituzioni = Sostituzioni("https://www.rapisardidavinci.edu.it/sost/app/sostituzioni3.php")
+        return sostituzioni.getNextUpdatesFromClass(classe)
+    
+    return JSONResponse(content={"message": "Invalid class", "status": "error", "code": 400}, status_code=400)
+
+# Routes all
+@app.get("/sostituzioni/margherita/all", tags=["Sostituzioni"])
+@limiter.limit("1/second")
+def sostituzioni_margherita_all(request: Request, response: Response):
+    sostituzioni = Sostituzioni("https://www.rapisardidavinci.edu.it/sost/app/sostituzioni.php")
+    updates = sostituzioni.getAllUpdates()
+    if updates != "null" and updates != None:
+        return JSONResponse(content={"message": updates, "status": "success", "code": 200}, status_code=200)
+    else:
+        return JSONResponse(content={"message": "No updates", "status": "error", "code": 404}, status_code=404)
+
+@app.get("/sostituzioni/turati/all", tags=["Sostituzioni"])
+@limiter.limit("1/second")
+def sostituzioni_turati_all(request: Request, response: Response):
+    sostituzioni = Sostituzioni("https://www.rapisardidavinci.edu.it/sost/app/sostituzioni2.php")
+    updates = sostituzioni.getAllUpdates()
+    if updates != "null" and updates != None:
+        return JSONResponse(content={"message": updates, "status": "success", "code": 200}, status_code=200)
+    else:
+        return JSONResponse(content={"message": "No updates", "status": "error", "code": 404}, status_code=404)
+    
+@app.get("/sostituzioni/serale/all", tags=["Sostituzioni"])
+@limiter.limit("1/second")
+def sostituzioni_serale_all(request: Request, response: Response):
+    sostituzioni = Sostituzioni("https://www.rapisardidavinci.edu.it/sost/app/sostituzioni3.php")
+    updates = sostituzioni.getAllUpdates()
+    if updates != "null" and updates != None:
+        return JSONResponse(content={"message": updates, "status": "success", "code": 200}, status_code=200)
+    else:
+        return JSONResponse(content={"message": "No updates", "status": "error", "code": 404}, status_code=404)
