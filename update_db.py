@@ -48,7 +48,6 @@ def sendEmail(to, subject, body, html=False):
     server.sendmail(smtp_user, to, text)
     server.quit()
 
-
 def getUserDataFromDB(userId):
     sql = "SELECT * FROM users WHERE id = " + str(userId)
     try:
@@ -58,7 +57,6 @@ def getUserDataFromDB(userId):
     except:
         print("Error: unable to fetch data")
         return None
-
 
 def getUserAndClassroomData(userId):
     userApiKey = getUserDataFromDB(userId)[1]

@@ -5,6 +5,9 @@
 # Created by: @Matt0550 (GitHub)
 
 # FastAPI
+import atexit
+import datetime
+import os
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from fastapi import FastAPI, Request, Response, status
 from fastapi.responses import JSONResponse
@@ -15,6 +18,9 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
+import uvicorn
+from apscheduler.schedulers.background import BackgroundScheduler
+
 
 from Sostituzioni import Sostituzioni
 # Init 
@@ -178,3 +184,43 @@ def sostituzioni_serale_all(request: Request, response: Response):
         return JSONResponse(content={"message": updates, "status": "success", "code": 200}, status_code=200)
     else:
         return JSONResponse(content={"message": "No updates", "status": "error", "code": 404}, status_code=404)
+    
+# Home
+start_time = datetime.datetime.now() # For the uptime
+
+@app.get("/status", tags=["Status"])
+@limiter.limit("1/second")
+def api_status(request: Request, response: Response):
+    # Get the API uptime without microseconds
+    uptime = datetime.datetime.now() - start_time
+    uptime = str(uptime).split(".")[0]
+
+    url = request.url
+    url = url.scheme + "://" + url.netloc
+
+    message = "StudyApp: The Rapisardi integration is working correctly"
+
+    response.status_code = status.HTTP_200_OK
+
+    return {"message": message, "uptime": uptime, "status": "success", "code": response.status_code, "url": url}
+
+@app.get('/', tags=["Status"])
+@limiter.limit("1/second")
+def home(request: Request, response: Response):
+    return api_status(request, response)
+
+def update_db():
+    # Run the update_db.py script
+    os.system("python3 update_db.py")
+
+# Run file update_db.py every hour
+scheduler = BackgroundScheduler()
+scheduler.add_job(update_db, 'interval', hours=1)
+scheduler.start()
+
+# Shut down the scheduler when exiting the app
+atexit.register(lambda: scheduler.shutdown())
+
+# Run the app
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0")
