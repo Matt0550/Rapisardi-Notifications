@@ -99,7 +99,7 @@ def sostituzioni_margherita_next(request: Request, response: Response, classe: s
     # Check if the class is valid
     if classe != None:
         sostituzioni = Sostituzioni("https://www.rapisardidavinci.edu.it/sost/app/sostituzioni.php")
-        return sostituzioni.getNextUpdatesFromClass(classe)
+        return JSONResponse(content={"message": sostituzioni.getNextUpdatesFromClass(classe), "status": "success", "code": 200}, status_code=200)
     
     return JSONResponse(content={"message": "Invalid class", "status": "error", "code": 400}, status_code=400)
 
@@ -125,7 +125,7 @@ def sostituzioni_turati_next(request: Request, response: Response, classe: str):
     # Check if the class is valid
     if classe != None:
         sostituzioni = Sostituzioni("https://www.rapisardidavinci.edu.it/sost/app/sostituzioni2.php")
-        return sostituzioni.getNextUpdatesFromClass(classe)
+        return JSONResponse(content={"message": sostituzioni.getNextUpdatesFromClass(classe), "status": "success", "code": 200}, status_code=200)
     
     return JSONResponse(content={"message": "Invalid class", "status": "error", "code": 400}, status_code=400)
 
@@ -150,7 +150,7 @@ def sostituzioni_serale_next(request: Request, response: Response, classe: str):
     # Check if the class is valid
     if classe != None:
         sostituzioni = Sostituzioni("https://www.rapisardidavinci.edu.it/sost/app/sostituzioni3.php")
-        return sostituzioni.getNextUpdatesFromClass(classe)
+        return JSONResponse(content={"message": sostituzioni.getNextUpdatesFromClass(classe), "status": "success", "code": 200}, status_code=200)
     
     return JSONResponse(content={"message": "Invalid class", "status": "error", "code": 400}, status_code=400)
 
