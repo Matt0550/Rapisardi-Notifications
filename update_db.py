@@ -4,6 +4,7 @@ from bs4 import BeautifulSoup
 from datetime import datetime
 import smtplib
 import os
+import requests
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.base import MIMEBase
@@ -12,9 +13,19 @@ from Sostituzioni import Sostituzioni
 
 load_dotenv()
 
+mysql_host = os.getenv("MYSQL_HOST")
+mysql_username = os.getenv("MYSQL_USERNAME")
+mysql_password = os.getenv("MYSQL_PASSWORD")
+mysql_database = os.getenv("MYSQL_DATABASE")
+mysql_port = os.getenv("MYSQL_PORT")
+
+# Check if the MySQL password is set
+if mysql_password == None or mysql_password == "":
+    print("MySQL password not set")
+    exit()
 
 # Open database connection
-db = MySQLdb.connect(os.getenv("MYSQL_HOST"), os.getenv("MYSQL_USERNAME"), os.getenv("MYSQL_PASSWORD"), os.getenv("MYSQL_DATABASE"), int(os.getenv("MYSQL_PORT")))
+db = MySQLdb.connect(host=mysql_host, port=int(mysql_port), user=mysql_username, passwd=mysql_password, db=mysql_database)
 
 # prepare a cursor object using cursor() method
 cursor = db.cursor()
@@ -135,6 +146,11 @@ def sendEmailToUser(userDBData, email, table, array, date, userClass):
             return None
 
 def main():
+    try:
+        requests.get("https://hc-ping.com/822bf142-8aa4-4621-b3e7-f517ac2bf28f", timeout=10)
+    except requests.RequestException as e:
+        # Log ping failure here...
+        print("Ping failed: %s" % e)
     checkUpdates()
 
 if __name__ == "__main__":

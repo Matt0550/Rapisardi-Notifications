@@ -99,10 +99,13 @@ def sostituzioni_margherita_next(request: Request, response: Response, classe: s
     # Check if the class is valid
     if classe != None:
         sostituzioni = Sostituzioni("https://www.rapisardidavinci.edu.it/sost/app/sostituzioni.php")
-        return JSONResponse(content={"message": sostituzioni.getNextUpdatesFromClass(classe), "status": "success", "code": 200}, status_code=200)
-    
-    return JSONResponse(content={"message": "Invalid class", "status": "error", "code": 400}, status_code=400)
+        updates = sostituzioni.getNextUpdatesFromClass(classe)
+        if updates != "null" and updates != None:
+            return JSONResponse(content={"message": updates, "status": "success", "code": 200}, status_code=200)
+        else:
+            return JSONResponse(content={"message": "No updates", "status": "error", "code": 404}, status_code=404)
 
+    return JSONResponse(content={"message": "Invalid class", "status": "error", "code": 400}, status_code=400)
 
 # Routes turati
 @app.get("/sostituzioni/turati/today/{classe}", tags=["Sostituzioni"])
@@ -125,8 +128,12 @@ def sostituzioni_turati_next(request: Request, response: Response, classe: str):
     # Check if the class is valid
     if classe != None:
         sostituzioni = Sostituzioni("https://www.rapisardidavinci.edu.it/sost/app/sostituzioni2.php")
-        return JSONResponse(content={"message": sostituzioni.getNextUpdatesFromClass(classe), "status": "success", "code": 200}, status_code=200)
-    
+        updates = sostituzioni.getNextUpdatesFromClass(classe)
+        if updates != "null" and updates != None:
+            return JSONResponse(content={"message": updates, "status": "success", "code": 200}, status_code=200)
+        else:
+            return JSONResponse(content={"message": "No updates", "status": "error", "code": 404}, status_code=404)
+
     return JSONResponse(content={"message": "Invalid class", "status": "error", "code": 400}, status_code=400)
 
 # Routes serale
@@ -150,8 +157,12 @@ def sostituzioni_serale_next(request: Request, response: Response, classe: str):
     # Check if the class is valid
     if classe != None:
         sostituzioni = Sostituzioni("https://www.rapisardidavinci.edu.it/sost/app/sostituzioni3.php")
-        return JSONResponse(content={"message": sostituzioni.getNextUpdatesFromClass(classe), "status": "success", "code": 200}, status_code=200)
-    
+        updates = sostituzioni.getNextUpdatesFromClass(classe)
+        if updates != "null" and updates != None:
+            return JSONResponse(content={"message": updates, "status": "success", "code": 200}, status_code=200)
+        else:
+            return JSONResponse(content={"message": "No updates", "status": "error", "code": 404}, status_code=404)
+
     return JSONResponse(content={"message": "Invalid class", "status": "error", "code": 400}, status_code=400)
 
 # Routes all
@@ -164,6 +175,7 @@ def sostituzioni_margherita_all(request: Request, response: Response):
         return JSONResponse(content={"message": updates, "status": "success", "code": 200}, status_code=200)
     else:
         return JSONResponse(content={"message": "No updates", "status": "error", "code": 404}, status_code=404)
+
 
 @app.get("/sostituzioni/turati/all", tags=["Sostituzioni"])
 @limiter.limit("1/second")
