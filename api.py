@@ -5,7 +5,6 @@
 # Created by: @Matt0550 (GitHub)
 
 # FastAPI
-import atexit
 import datetime
 import os
 from starlette.exceptions import HTTPException as StarletteHTTPException
@@ -19,8 +18,6 @@ from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 import uvicorn
-from apscheduler.schedulers.background import BackgroundScheduler
-
 
 from Sostituzioni import Sostituzioni
 # Init 
@@ -224,14 +221,6 @@ def home(request: Request, response: Response):
 def update_db():
     # Run the update_db.py script
     os.system("python3 update_db.py")
-
-# Run file update_db.py every hour
-scheduler = BackgroundScheduler()
-scheduler.add_job(update_db, 'interval', hours=1)
-scheduler.start()
-
-# Shut down the scheduler when exiting the app
-atexit.register(lambda: scheduler.shutdown())
 
 # Run the app
 if __name__ == "__main__":
