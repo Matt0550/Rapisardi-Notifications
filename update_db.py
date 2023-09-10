@@ -3,6 +3,7 @@ from bs4 import BeautifulSoup
 from datetime import datetime
 import smtplib
 import os
+import requests
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.base import MIMEBase
@@ -137,6 +138,11 @@ def sendEmailToUser(userDBData, email, table, array, date, userClass):
             return None
 
 def main():
+    try:
+        requests.get("https://hc-ping.com/822bf142-8aa4-4621-b3e7-f517ac2bf28f", timeout=10)
+    except requests.RequestException as e:
+        # Log ping failure here...
+        print("Ping failed: %s" % e)
     checkUpdates()
 
 if __name__ == "__main__":

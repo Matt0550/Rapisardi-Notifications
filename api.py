@@ -5,7 +5,6 @@
 # Created by: @Matt0550 (GitHub)
 
 # FastAPI
-import atexit
 import datetime
 import os
 from starlette.exceptions import HTTPException as StarletteHTTPException
@@ -19,8 +18,6 @@ from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 import uvicorn
-from apscheduler.schedulers.background import BackgroundScheduler
-
 
 from Sostituzioni import Sostituzioni
 # Init 
@@ -99,10 +96,13 @@ def sostituzioni_margherita_next(request: Request, response: Response, classe: s
     # Check if the class is valid
     if classe != None:
         sostituzioni = Sostituzioni("https://www.rapisardidavinci.edu.it/sost/app/sostituzioni.php")
-        return JSONResponse(content={"message": sostituzioni.getNextUpdatesFromClass(classe), "status": "success", "code": 200}, status_code=200)
-    
-    return JSONResponse(content={"message": "Invalid class", "status": "error", "code": 400}, status_code=400)
+        updates = sostituzioni.getNextUpdatesFromClass(classe)
+        if updates != "null" and updates != None:
+            return JSONResponse(content={"message": updates, "status": "success", "code": 200}, status_code=200)
+        else:
+            return JSONResponse(content={"message": "No updates", "status": "error", "code": 404}, status_code=404)
 
+    return JSONResponse(content={"message": "Invalid class", "status": "error", "code": 400}, status_code=400)
 
 # Routes turati
 @app.get("/sostituzioni/turati/today/{classe}", tags=["Sostituzioni"])
@@ -125,8 +125,12 @@ def sostituzioni_turati_next(request: Request, response: Response, classe: str):
     # Check if the class is valid
     if classe != None:
         sostituzioni = Sostituzioni("https://www.rapisardidavinci.edu.it/sost/app/sostituzioni2.php")
-        return JSONResponse(content={"message": sostituzioni.getNextUpdatesFromClass(classe), "status": "success", "code": 200}, status_code=200)
-    
+        updates = sostituzioni.getNextUpdatesFromClass(classe)
+        if updates != "null" and updates != None:
+            return JSONResponse(content={"message": updates, "status": "success", "code": 200}, status_code=200)
+        else:
+            return JSONResponse(content={"message": "No updates", "status": "error", "code": 404}, status_code=404)
+
     return JSONResponse(content={"message": "Invalid class", "status": "error", "code": 400}, status_code=400)
 
 # Routes serale
@@ -150,8 +154,12 @@ def sostituzioni_serale_next(request: Request, response: Response, classe: str):
     # Check if the class is valid
     if classe != None:
         sostituzioni = Sostituzioni("https://www.rapisardidavinci.edu.it/sost/app/sostituzioni3.php")
-        return JSONResponse(content={"message": sostituzioni.getNextUpdatesFromClass(classe), "status": "success", "code": 200}, status_code=200)
-    
+        updates = sostituzioni.getNextUpdatesFromClass(classe)
+        if updates != "null" and updates != None:
+            return JSONResponse(content={"message": updates, "status": "success", "code": 200}, status_code=200)
+        else:
+            return JSONResponse(content={"message": "No updates", "status": "error", "code": 404}, status_code=404)
+
     return JSONResponse(content={"message": "Invalid class", "status": "error", "code": 400}, status_code=400)
 
 # Routes all
@@ -164,6 +172,7 @@ def sostituzioni_margherita_all(request: Request, response: Response):
         return JSONResponse(content={"message": updates, "status": "success", "code": 200}, status_code=200)
     else:
         return JSONResponse(content={"message": "No updates", "status": "error", "code": 404}, status_code=404)
+
 
 @app.get("/sostituzioni/turati/all", tags=["Sostituzioni"])
 @limiter.limit("1/second")
@@ -212,14 +221,6 @@ def home(request: Request, response: Response):
 def update_db():
     # Run the update_db.py script
     os.system("python3 update_db.py")
-
-# Run file update_db.py every hour
-scheduler = BackgroundScheduler()
-scheduler.add_job(update_db, 'interval', hours=1)
-scheduler.start()
-
-# Shut down the scheduler when exiting the app
-atexit.register(lambda: scheduler.shutdown())
 
 # Run the app
 if __name__ == "__main__":
