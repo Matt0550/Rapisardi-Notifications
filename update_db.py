@@ -1,3 +1,6 @@
+"""
+This script is used to send email with the updates of the substitutions to the users that have subscribed to the service
+"""
 import requests
 from bs4 import BeautifulSoup
 from datetime import datetime
@@ -73,8 +76,10 @@ def checkUpdates():
         sostituzioni = Sostituzioni("https://www.rapisardidavinci.edu.it/sost/app/sostituzioni.php")
         # Get today updates if the hour is between 8 and 14 
         if datetime.now().hour >= 8 and datetime.now().hour <= 14:
+            print("Getting today updates")
             updates = sostituzioni.getTodayUpdates()
         else:
+            print("Getting next updates")
             updates = sostituzioni.getNextUpdates()
         
         for update in updates:
@@ -110,7 +115,7 @@ def checkUpdates():
         print("Error: unable to fetch data")
         print(e)
         print(e.__traceback__.tb_lineno)
-        return None
+        return False
     
 def sendEmailToUser(userDBData, table, array, date):
     lastSent = userDBData["last_notification"] if "last_notification" in userDBData else datetime.now()
@@ -122,7 +127,8 @@ def sendEmailToUser(userDBData, table, array, date):
     # Check if the email has already been sent but if the content is different send it again
     if lastSent.strftime("%Y-%m-%d") == datetime.now().strftime("%Y-%m-%d") and lastContent == str(array):
         print("Email already sent")
-        return None
+        client.close()
+        return True
     else:
         # Send the email
         message = "Ciao, le sostituzioni in data " + date + " della classe " + userClass + " (Sede Viale R. Margherita) sono state aggiornate: <br> <br>" + table
@@ -131,9 +137,9 @@ def sendEmailToUser(userDBData, table, array, date):
         # Update the last sent date and content
         usersDb.update_one({"_id": userDBData["_id"]}, {"$set": {"last_notification": datetime.now(), "last_sostituzioni": str(array)}})
         print("Email sent to " + email)
+        # Close the connection
+        client.close()
         return True
-
-
 
 def main():
     checkUpdates()

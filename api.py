@@ -18,8 +18,8 @@ from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 import uvicorn
-
-from Sostituzioni import Sostituzioni
+from sostituzioni import Sostituzioni
+from threading import Thread
 # Init 
 app = FastAPI()
 limiter = Limiter(key_func=get_remote_address, default_limits=["3/5seconds", "10/minute"])
@@ -207,7 +207,7 @@ def api_status(request: Request, response: Response):
     url = request.url
     url = url.scheme + "://" + url.netloc
 
-    message = "StudyApp: The Rapisardi integration is working correctly"
+    message = "The Rapisardi Notifications API is up and running. Check the documentation at " + url + "/docs or " + url + "/redoc for more information. By @Matt0550 (GitHub)"
 
     response.status_code = status.HTTP_200_OK
 
@@ -218,9 +218,23 @@ def api_status(request: Request, response: Response):
 def home(request: Request, response: Response):
     return api_status(request, response)
 
-def update_db():
-    # Run the update_db.py script
-    os.system("python3 update_db.py")
+def updateDb():
+    # Run update_db.py in a new thread
+    thread = Thread(target=os.system, args=("python update_db.py",))
+    thread.start()
+
+# Exclude from docs
+@app.get('/admin/update_db', tags=["Admin"], include_in_schema=False)
+@limiter.limit("1/second")
+def update_db(request: Request, response: Response):
+    print("Checking for updates " + str(request.client.host))
+    # Check if the request is from localhost
+    if request.client.host == "localhost" or request.client.host == "0.0.0.0" or request.client.host == "127.0.0.1":
+        # Check for updates
+        updateDb()
+        return JSONResponse(content={"message": "Success triggering update_db", "status": "success", "code": 200}, status_code=200)
+    else:
+        return JSONResponse(content={"message": "Unauthorized", "status": "error", "code": 401}, status_code=401)
 
 # Run the app
 if __name__ == "__main__":
