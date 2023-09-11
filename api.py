@@ -8,10 +8,13 @@
 import datetime
 import os
 from starlette.exceptions import HTTPException as StarletteHTTPException
-from fastapi import FastAPI, Request, Response, status
+from fastapi import FastAPI, Request, Response, status, Form
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exception_handlers import http_exception_handler
+from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
 from fastapi.exceptions import RequestValidationError
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
@@ -19,9 +22,13 @@ from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 import uvicorn
 from sostituzioni import Sostituzioni
+from db import Database
 from threading import Thread
 # Init 
 app = FastAPI()
+app.mount("/static", StaticFiles(directory="static"), name="static")
+templates = Jinja2Templates(directory="templates")
+
 limiter = Limiter(key_func=get_remote_address, default_limits=["3/5seconds", "10/minute"])
 
 app.state.limiter = limiter
@@ -39,6 +46,7 @@ app.add_middleware(
 
 app.add_middleware(SlowAPIMiddleware)
 
+DATABASE = Database()
 
 # Handle the 404 error. Use HTTP_exception_handler to handle the error
 @app.exception_handler(StarletteHTTPException)
@@ -194,6 +202,38 @@ def sostituzioni_serale_all(request: Request, response: Response):
     else:
         return JSONResponse(content={"message": "No updates", "status": "error", "code": 404}, status_code=404)
     
+@app.get("/dashboard/", tags=["Dashboard"])
+@limiter.limit("2/second")
+def dashboard(request: Request, response: Response):
+    return templates.TemplateResponse("dashboard.html", {"request": request})
+
+@app.post("/dashboard/", tags=["Dashboard"])
+@limiter.limit("2/second")
+def dashboard(request: Request, response: Response, email: str = Form(...), classe: str = Form(None), delete: str = Form(None)):
+    # Check if email in form
+    if email == None or email == "":
+        return templates.TemplateResponse("dashboard.html", {"request": request, "error": "Email not set"})
+
+    # Check if email is valid
+    if "@" not in email or "." not in email:
+        return templates.TemplateResponse("dashboard.html", {"request": request, "error": "Invalid email"})
+
+    # Check if email is already in the database
+    user = DATABASE.getUserFromEmail(email)
+    if user != None:
+        if delete != None:
+            # Delete the class from the user
+            DATABASE.deleteClassFromUser(email, classe)
+            return templates.TemplateResponse("dashboard.html", {"request": request, "user": user, "success": "Class deleted"})
+       
+        else:
+            return templates.TemplateResponse("dashboard.html", {"request": request, "user": user})
+
+    return templates.TemplateResponse("dashboard.html", {"request": request, "error": "User not found"})
+
+    
+    
+
 # Home
 start_time = datetime.datetime.now() # For the uptime
 

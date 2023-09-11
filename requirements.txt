@@ -7,3 +7,4 @@ slowapi
 starlette
 uvicorn
 pymongo
+jinja2

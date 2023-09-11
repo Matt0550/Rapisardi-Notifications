@@ -158,6 +158,14 @@ class Database:
 
             return True
 
+    def getUserFromEmail(self, email):
+        return usersDb.find_one({"email": email})
+
+    def deleteClassFromUser(self, email, classe):
+        # Delte where classe is in classi array
+        usersDb.update_one({"email": email}, {"$pull": {"classi": classe}})
+        return True
+
     def insertUserInDatabase(self, email, classi):
         usersDb.insert_one({"email": email, "classi": classi})
 
