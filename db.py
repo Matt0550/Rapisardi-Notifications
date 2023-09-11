@@ -18,9 +18,24 @@ from pymongo import MongoClient
 class Database:
     client = object
     usersDb = object
-    # Init
+    
+    load_dotenv()
+
+    # Setup SMTP server
+    SMTP_SERVER = os.getenv("SMTP_HOST")
+    SMTP_PORT = int(os.getenv("SMTP_PORT"))
+    SMTP_USER = os.getenv("SMTP_USERNAME")
+    SMTP_PORT = int(os.getenv("SMTP_PORT", 465))
+    SMTP_PASSWORD = os.getenv("SMTP_PASSWORD")
+    SMTP_SSL = os.getenv("SMTP_SSL", True)
+    SMTP_FROM = os.getenv("SMTP_FROM")
+
+    # Check if the SMTP password is set
+    if SMTP_PASSWORD == None or SMTP_PASSWORD == "":
+        print("SMTP password not set")
+        exit()
+# Init
     def __init__(self):
-        load_dotenv()
 
         MONGODB_HOST = os.getenv("MONGODB_HOST")
         MONGODB_PORT = int(os.getenv("MONGODB_PORT", 27017))
@@ -32,19 +47,6 @@ class Database:
             print("MongoDB username or password not set")
             exit()
 
-        # Setup SMTP server
-        SMTP_SERVER = os.getenv("SMTP_HOST")
-        SMTP_PORT = int(os.getenv("SMTP_PORT"))
-        SMTP_USER = os.getenv("SMTP_USERNAME")
-        SMTP_PORT = int(os.getenv("SMTP_PORT", 465))
-        SMTP_PASSWORD = os.getenv("SMTP_PASSWORD")
-        SMTP_SSL = os.getenv("SMTP_SSL", True)
-        SMTP_FROM = os.getenv("SMTP_FROM")
-
-        # Check if the SMTP password is set
-        if SMTP_PASSWORD == None or SMTP_PASSWORD == "":
-            print("SMTP password not set")
-            exit()
 
         global client
         global usersDb
@@ -89,8 +91,10 @@ class Database:
             for update in updates:
                 print("Checking update for " + update["classe"])
                 
-                # Search users where update["classe"] in classi "[]" array
+                # Search users where update["classe"] is in classi "[]" array in the mongodb database
                 usersInClass = usersDb.find({"classi": update["classe"]})
+                #print("Found " + str(len(list(usersInClass))) + " users in " + update["classe"])
+              
                 
                 for user in usersInClass:
 
@@ -99,8 +103,11 @@ class Database:
                     #     continue
 
                     print("Checking " + update["classe"] + " for " + user["email"])
+                    # lower() to make it case insensitive
+                    user["classi"] = [x.lower() for x in user["classi"]]
 
-                    if update["classe"].lower() != user["classe"].lower():
+
+                    if update["classe"].lower() not in user["classi"]:
                         continue
 
                     print("Found update for " + user["email"])
@@ -111,7 +118,7 @@ class Database:
                     table += "</table>"
                     table += "<br> Docenti assenti: " + update["docentiAssenti"]
                     # Send the mail
-                    self.sendEmailToUser(self, user, table, update["sostituzioni"], update["date"])
+                    self.sendEmailToUser(user, table, update["sostituzioni"], update["date"], update["classe"])
 
             requests.get("https://hc-ping.com/822bf142-8aa4-4621-b3e7-f517ac2bf28f", timeout=10)
 
@@ -123,29 +130,36 @@ class Database:
             print(e.__traceback__.tb_lineno)
             return False
         
-    def sendEmailToUser(self, userDBData, table, array, date):
+    def sendEmailToUser(self, userDBData, table, array, date, classe):
         lastSent = userDBData["last_notification"] if "last_notification" in userDBData else datetime.now()
-        lastContent = userDBData["last_sostituzioni"] if "last_sostituzioni" in userDBData else ""
+        lastContent = userDBData["last_sostituzioni"] if "last_sostituzioni" in userDBData else {}
 
         email = userDBData["email"]
-        userClass = userDBData["classe"]
 
         # Check if the email has already been sent but if the content is different send it again
-        if lastSent.strftime("%Y-%m-%d") == datetime.now().strftime("%Y-%m-%d") and lastContent == str(array):
+        if lastSent.strftime("%Y-%m-%d") == datetime.now().strftime("%Y-%m-%d") and lastContent.get(classe) == array:
             print("Email already sent")
-            client.close()
+  
             return True
         else:
             # Send the email
-            message = "Ciao, le sostituzioni in data " + date + " della classe " + userClass + " (Sede Viale R. Margherita) sono state aggiornate: <br> <br>" + table
+            sede = "Viale R. Margherita" if userDBData["endpoint"] == "margherita" else "Via Filippo Turati" if userDBData["endpoint"] == "turati" else "Sede non specificata"
+            message = "Ciao, le sostituzioni in data " + date + " della classe " + classe + " (Sede Viale R. Margherita) sono state aggiornate: <br> <br>" + table
             self.sendEmail(email, "Aggiornamento sostituzioni", message, True)
+            
+            # Add to last content {{"classe": array}, {}]
+            lastContentJson = lastContent
+            lastContentJson[classe] = array
+            lastContentJson = lastContentJson
 
             # Update the last sent date and content
-            usersDb.update_one({"_id": userDBData["_id"]}, {"$set": {"last_notification": datetime.now(), "last_sostituzioni": str(array)}})
+            usersDb.update_one({"_id": userDBData["_id"]}, {"$set": {"last_notification": datetime.now(), "last_sostituzioni": lastContentJson}})
             print("Email sent to " + email)
-            # Close the connection
-            client.close()
+
             return True
+
+    def insertUserInDatabase(self, email, classi):
+        usersDb.insert_one({"email": email, "classi": classi})
 
     def main(self):
         self.checkUpdates()
