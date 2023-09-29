@@ -256,7 +256,7 @@ def dashboard(request: Request, response: Response, email: str = Form(...), clas
     # Check if email is already in the database
     user = DATABASE.getUserFromEmail(email)
     if user != None:
-        if delete != None and delete == True or delete.lower() == "true":
+        if delete != None and delete == True or delete == "true":
             print("Deleting " + str(classe) + " from " + email)
             # Delete the class from the user
             if DATABASE.deleteClassFromUser(email, classe):
@@ -264,7 +264,7 @@ def dashboard(request: Request, response: Response, email: str = Form(...), clas
                 return templates.TemplateResponse("dashboard.html", {"request": request, "user": user, "success": "Class deleted"})
             else:
                 return templates.TemplateResponse("dashboard.html", {"request": request, "user": user, "error": "Class not found"})
-        elif delete != None and delete == False or delete.lower() == "false":
+        elif delete != None and delete == False or delete == "false":
             print("Adding " + str(classe) + " to " + email)
             # Add the class to the user
             if DATABASE.addClassToUser(email, classe):
