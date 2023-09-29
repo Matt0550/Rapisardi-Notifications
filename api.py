@@ -8,7 +8,7 @@
 import datetime
 import os
 from starlette.exceptions import HTTPException as StarletteHTTPException
-from fastapi import FastAPI, Request, Response, status, Form
+from fastapi import FastAPI, Request, Response, status, Form, Body
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exception_handlers import http_exception_handler
@@ -309,17 +309,20 @@ def updateDb():
     thread.start()
 
 # Exclude from docs
-@app.get('/admin/update_db', tags=["Admin"], include_in_schema=False)
+@app.post('/admin/update_db', tags=["Admin"], include_in_schema=False)
 @limiter.limit("1/second")
-def update_db(request: Request, response: Response):
-    print("Checking for updates " + str(request.client.host))
-    # Check if the request is from localhost
-    if request.client.host in ALLOWED_ADMIN_IPS:
-        # Check for updates
-        updateDb()
-        return JSONResponse(content={"message": "Success triggering update_db", "status": "success", "code": 200}, status_code=200)
+async def update_db(request: Request, response: Response, token: str = Form(...)):
+    if token != None:
+        print("Checking for updates " + str(request.client.host))
+        # Check if the request is from localhost
+        if token == os.environ["ADMIN_TOKEN"]:
+            # Check for updates
+            updateDb()
+            return JSONResponse(content={"message": "Success triggering update_db", "status": "success", "code": 200}, status_code=200)
+        else:
+            return JSONResponse(content={"message": "Unauthorized", "status": "error", "code": 401}, status_code=401)
     else:
-        return JSONResponse(content={"message": "Unauthorized", "status": "error", "code": 401}, status_code=401)
+        return JSONResponse(content={"message": "Unauthorized", "status": "error", "code": 400}, status_code=400)
 
 # Run the app
 if __name__ == "__main__":
