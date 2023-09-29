@@ -166,6 +166,11 @@ class Database:
         usersDb.update_one({"email": email}, {"$pull": {"classi": classe}})
         return True
 
+    def addClassToUser(self, email, classe):
+        # Add where classe is in classi array
+        usersDb.update_one({"email": email}, {"$push": {"classi": classe}})
+        return True
+
     def insertUserInDatabase(self, email, classi):
         usersDb.insert_one({"email": email, "classi": classi})
 

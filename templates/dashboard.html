@@ -82,14 +82,20 @@
                                     <!-- Each classe in user["classi"] create a row with the name of the clòass and a icon to delete the class -->
                                     <h2 class="text-xl font-medium text-gray-700 my-2">Classi con attive le notifiche
                                     </h2>
+                                    {% if user["classi"]|length == 0 %}
+                                    <p class="text-sm font-medium text-gray-700 my-2">Non hai nessuna classe con le
+                                        notifiche attive</p>
+                                    {% endif %}
+
                                     {% for classe in user["classi"] %}
+                                   
                                     <div class="flex flex-col items-center gap-4">
                                         <div class="flex flex-row gap-3">
-                                            <input type="text" name="class" id="class" placeholder="Class"
+                                            <input type="text" name="classe" id="classe" placeholder="Classe"
                                                 class="border border-gray-300 rounded-lg px-3 py-2 mt-1 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent"
                                                 value="{{ classe }}" disabled>
                                             <form action="" method="POST">
-                                                <input type="hidden" name="class" value="{{ classe }}">
+                                                <input type="hidden" name="classe" value="{{ classe }}">
                                                 <input type="hidden" name="delete" value="true">
                                                 <input type="hidden" name="email" value="{{ user.email }}">
                                                 <button class="btn btn-primary" type="submit">
@@ -106,14 +112,16 @@
                                     {% endfor %}
                                     <!-- Form to add a class -->
                                     <form action="" method="POST">
+                                        <input type="hidden" name="delete" value="false">
+                                        <input type="hidden" name="email" value="{{ user.email }}">
                                         <div class="flex flex-col">
-                                            <label for="class" class="text-sm font-medium text-gray-700">Class</label>
-                                            <input type="text" name="class" id="class" placeholder="Class"
+                                            <label for="class" class="text-sm font-medium text-gray-700">Aggiungi classe</label>
+                                            <input type="text" required name="classe" id="classe" placeholder="Classe"
                                                 class="border border-gray-300 rounded-lg px-3 py-2 mt-1 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent">
                                         </div>
                                         <div class="flex flex-col pt-2 max-w-xs mx-auto">
                                             <button class="btn btn-primary" type="submit">
-                                                Add
+                                                Aggiungi
                                             </button>
                                         </div>
                                     </form>

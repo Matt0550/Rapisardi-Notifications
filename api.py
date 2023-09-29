@@ -22,6 +22,7 @@ from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 import uvicorn
 from sostituzioni import Sostituzioni
+from orario import Orario
 from db import Database
 from threading import Thread
 # Init 
@@ -47,6 +48,12 @@ app.add_middleware(
 app.add_middleware(SlowAPIMiddleware)
 
 DATABASE = Database()
+ALLOWED_ADMIN_IPS = [
+    "localhost",
+    "127.0.0.1",
+    "192.168.1.75",
+    "0.0.0.0"
+]
 
 # Handle the 404 error. Use HTTP_exception_handler to handle the error
 @app.exception_handler(StarletteHTTPException)
@@ -79,9 +86,9 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
     else:
         return JSONResponse(content={"message": exc.errors()[0]["msg"], "status": "error", "code": status_code}, status_code=status_code)
     
-@app.exception_handler(RateLimitExceeded)
-async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
-    return JSONResponse(content={"message": "Rate limit exceeded. Try again in " + str(exc.retry_after) + " seconds", "status": "error", "code": 429}, status_code=429)
+# @app.exception_handler(RateLimitExceeded)
+# async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
+#     return JSONResponse(content={"message": "Rate limit exceeded. Try again in " + str(exc.retry_after) + " seconds", "status": "error", "code": 429}, status_code=429)
 
 # Routes margherita
 @app.get("/sostituzioni/margherita/today/{classe}", tags=["Sostituzioni"])
@@ -202,6 +209,30 @@ def sostituzioni_serale_all(request: Request, response: Response):
     else:
         return JSONResponse(content={"message": "No updates", "status": "error", "code": 404}, status_code=404)
     
+@app.get("/orario/classi/all", tags=["Orario"])
+@limiter.limit("1/second")
+def orario_classi_all(request: Request, response: Response, onlyNames: bool = False):
+    orario = Orario("https://www.rapisardidavinci.edu.it/orario/")
+    orario = orario.getAllClassesTimetable(onlyNames)
+
+    return JSONResponse(content={"message": orario, "status": "success", "code": 200}, status_code=200)
+
+@app.get("/orario/docenti/all", tags=["Orario"])
+@limiter.limit("1/second")
+def orario_docenti_all(request: Request, response: Response, onlyNames: bool = False):
+    orario = Orario("https://www.rapisardidavinci.edu.it/orario/")
+    orario = orario.getAllDocentiTimetable(onlyNames)
+
+    return JSONResponse(content={"message": orario, "status": "success", "code": 200}, status_code=200)
+
+@app.get("/orario/aule/all", tags=["Orario"])
+@limiter.limit("1/second")
+def orario_laboratori_all(request: Request, response: Response, onlyNames: bool = False):
+    orario = Orario("https://www.rapisardidavinci.edu.it/orario/")
+    orario = orario.getAllAuleTimetable(onlyNames)
+
+    return JSONResponse(content={"message": orario, "status": "success", "code": 200}, status_code=200)
+
 @app.get("/dashboard/", tags=["Dashboard"])
 @limiter.limit("2/second")
 def dashboard(request: Request, response: Response):
@@ -210,6 +241,10 @@ def dashboard(request: Request, response: Response):
 @app.post("/dashboard/", tags=["Dashboard"])
 @limiter.limit("2/second")
 def dashboard(request: Request, response: Response, email: str = Form(...), classe: str = Form(None), delete: str = Form(None)):
+    print("Email: " + str(email))
+    print("Classe: " + str(classe))
+    print("Delete: " + str(delete))
+
     # Check if email in form
     if email == None or email == "":
         return templates.TemplateResponse("dashboard.html", {"request": request, "error": "Email not set"})
@@ -221,18 +256,28 @@ def dashboard(request: Request, response: Response, email: str = Form(...), clas
     # Check if email is already in the database
     user = DATABASE.getUserFromEmail(email)
     if user != None:
-        if delete != None:
+        if delete != None and delete == True or delete.lower() == "true":
+            print("Deleting " + str(classe) + " from " + email)
             # Delete the class from the user
-            DATABASE.deleteClassFromUser(email, classe)
-            return templates.TemplateResponse("dashboard.html", {"request": request, "user": user, "success": "Class deleted"})
-       
+            if DATABASE.deleteClassFromUser(email, classe):
+                user = DATABASE.getUserFromEmail(email)
+                return templates.TemplateResponse("dashboard.html", {"request": request, "user": user, "success": "Class deleted"})
+            else:
+                return templates.TemplateResponse("dashboard.html", {"request": request, "user": user, "error": "Class not found"})
+        elif delete != None and delete == False or delete.lower() == "false":
+            print("Adding " + str(classe) + " to " + email)
+            # Add the class to the user
+            if DATABASE.addClassToUser(email, classe):
+                user = DATABASE.getUserFromEmail(email)
+                return templates.TemplateResponse("dashboard.html", {"request": request, "user": user, "success": "Class added"})
+            else:
+                return templates.TemplateResponse("dashboard.html", {"request": request, "user": user, "error": "Class not found"})
+    
         else:
             return templates.TemplateResponse("dashboard.html", {"request": request, "user": user})
 
     return templates.TemplateResponse("dashboard.html", {"request": request, "error": "User not found"})
 
-    
-    
 
 # Home
 start_time = datetime.datetime.now() # For the uptime
@@ -269,7 +314,7 @@ def updateDb():
 def update_db(request: Request, response: Response):
     print("Checking for updates " + str(request.client.host))
     # Check if the request is from localhost
-    if request.client.host == "localhost" or request.client.host == "0.0.0.0" or request.client.host == "127.0.0.1":
+    if request.client.host in ALLOWED_ADMIN_IPS:
         # Check for updates
         updateDb()
         return JSONResponse(content={"message": "Success triggering update_db", "status": "success", "code": 200}, status_code=200)
