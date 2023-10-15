@@ -81,10 +81,58 @@ def fromSedeToURL(sede):
     else:
         return "https://www.rapisardidavinci.edu.it/sost/app/sostituzioni.php"
 
+def adaptDbUser(user):
+    # Last sostituzioni
+    # {
+    #    "class": $array
+    # }
+    
+    # Last notification
+    # {
+    #    "class": $now
+    # }
+        # Fix the last_sostituzioni and last_notification. Copy the classes to last_notification and the sostituzioni if not present. Then push the new data to the database
+
+    if "last_sostituzioni" not in user:
+        usersDb.update_one({"_id": user["_id"]}, {"$set": {"last_sostituzioni": {}}})
+    if "last_notification" not in user:
+        usersDb.update_one({"_id": user["_id"]}, {"$set": {"last_notification": {}}})
+    if "classi" not in user:
+        usersDb.update_one({"_id": user["_id"]}, {"$set": {"classi": []}})
+    if "endpoint" not in user:
+        usersDb.update_one({"_id": user["_id"]}, {"$set": {"endpoint": "margherita"}})
+
+    if "last_sostituzioni" in user and "last_notification" in user:
+        # Update the list adding missing class and remove the ones that are not in the classi array. If the class there is in the array don't touch
+        for classe in user["classi"]:
+            if classe not in user["last_sostituzioni"]:
+                user["last_sostituzioni"][classe] = ""
+            if classe not in user["last_notification"]:
+                user["last_notification"][classe] = datetime.now()
+        for classe in user["last_sostituzioni"]:
+            if classe not in user["classi"]:
+                del user["last_sostituzioni"][classe]
+            if classe not in user["last_notification"]:
+                del user["last_notification"][classe]
+        # Update the last notification date
+        usersDb.update_one({"_id": user["_id"]}, {"$set": {"last_notification": user["last_notification"]}})
+        # Update the last sostituzioni
+        usersDb.update_one({"_id": user["_id"]}, {"$set": {"last_sostituzioni": user["last_sostituzioni"]}})
+    else:
+        # Add the classes to the last sostituzioni and last notification
+        lastSostituzioni = {}
+        lastNotification = {}
+        for classe in user["classi"]:
+            lastSostituzioni[classe] = ""
+            lastNotification[classe] = datetime.now()
+        usersDb.update_one({"_id": user["_id"]}, {"$set": {"last_notification": lastNotification}})
+        usersDb.update_one({"_id": user["_id"]}, {"$set": {"last_sostituzioni": lastSostituzioni}})
+
+
 def check(update, sede):
     print("Checking update for " + update["classe"])
     # Search users where the class is the same as the update 
-    usersInClass = usersDb.find({"classi": update["classe"]})      
+    usersInClass = usersDb.find({"classi": update["classe"], "endpoint": sede})
     for user in usersInClass:
 
         # if len(list(usersInClass)) == 0:
@@ -92,6 +140,8 @@ def check(update, sede):
         #     continue
 
         print("Checking " + update["classe"] + " for " + user["email"])
+        adaptDbUser(user)
+
 
         # if update["classe"].lower() in user["classi"]:
         #     print("User " + user["email"] + " not subscribed to " + update["classe"])
@@ -152,22 +202,25 @@ def checkUpdates():
     #     return False
     
 def sendEmailToUser(userDBData, table, array, date, sede, classe):
-    lastSent = userDBData["last_notification"] if "last_notification" in userDBData else datetime.now()
-    lastContent = userDBData["last_sostituzioni"] if "last_sostituzioni" in userDBData else ""
-
     email = userDBData["email"]
 
     # Check if the email has already been sent but if the content is different send it again
-    if lastSent.strftime("%Y-%m-%d") == datetime.now().strftime("%Y-%m-%d") and lastContent == str(array):
-        print("Email already sent")
-        return True
+    lastSent = userDBData["last_notification"][classe] if classe in userDBData["last_notification"] else datetime.now()
+    lastContent = userDBData["last_sostituzioni"][classe] if classe in userDBData["last_sostituzioni"] else ""
+
+    if lastContent == array and lastSent.date() == datetime.now().date():
+        print("Email already sent to " + email)
+        return False
+
     else:
         # Send the email
         message = "Ciao, le sostituzioni in data " + date + " della classe " + classe + " (Sede "+sede+") sono state aggiornate: <br> <br>" + table
         sendEmail(email, "Aggiornamento sostituzioni", message, True)
 
-        # Update the last sent date and content
-        usersDb.update_one({"_id": userDBData["_id"]}, {"$set": {"last_notification": datetime.now(), "last_sostituzioni": str(array)}})
+        # Update the last sent date and content: last_notification: {"class": $now} last_sostituzioni: {"class": $array}
+        usersDb.update_one({"_id": userDBData["_id"]}, {"$set": {"last_notification." + classe: datetime.now()}})
+        usersDb.update_one({"_id": userDBData["_id"]}, {"$set": {"last_sostituzioni." + classe: array}})
+
         print("Email sent to " + email)
         return True
 
