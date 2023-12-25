@@ -1,6 +1,5 @@
 beautifulsoup4
 fastapi
-mysqlclient
 python-dotenv
 requests
 slowapi
@@ -8,3 +7,4 @@ starlette
 uvicorn
 pymongo
 jinja2
+python-multipart
