@@ -112,3 +112,21 @@ Tramite la dashboard è possibile da parte dell'utente aggiungere o rimuovere le
 The dashboard is available at `http://<ip>:8080/dashboard`.
 
 Through the dashboard the user can add or remove the classes for which to receive notifications.
+
+## Licenza - License
+
+[MIT](https://choosealicense.com/licenses/mit/)
+
+## Contribuire - Contributing
+
+Le pull request sono benvenute. Per modifiche importanti, aprire prima un issue per discutere di cosa si vuole cambiare.
+
+Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
+
+## Supportami - Support me
+
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/matt05)
+
+[![buy-me-a-coffee](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/Matt0550)
+
+[![paypal](https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif)](https://paypal.me/sillittimatteo)
