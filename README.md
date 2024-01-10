@@ -5,6 +5,31 @@ API per ricevere le sostituzioni dell'Istituto Rapisardi da Vinci. Le sostituzio
 API to receive the substitutions of the Rapisardi da Vinci Institute. The substitutions are also sent via email with each new update.
 
 _This project is not affiliated, associated, authorized, endorsed by, or in any way officially connected with the Istituto Rapisardi da Vinci, or any of its subsidiaries or its affiliates._
+# Docker compose
+
+```yaml
+version: '3'
+
+services:
+  rapisardi-notifications:
+    image: matt0550/rapisardi_notifications
+    ports:
+      - "8000:8000"
+    environment:
+      - SMTP_HOST=
+      - SMTP_PORT=587
+      - SMTP_USERNAME=
+      - SMTP_PASSWORD=
+      - SMTP_SSL=False
+      - SMTP_FROM=
+      - MONGODB_HOST=
+      - MONGODB_USERNAME=
+      - MONGODB_PASSWORD=
+      - MONGODB_DATABASE=
+      - MONGODB_PORT=27017
+      - ADMIN_TOKEN=
+    restart: unless-stopped
+```
 
 ## Installazione - Install (Docker)
 

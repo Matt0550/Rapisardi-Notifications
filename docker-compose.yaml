@@ -18,3 +18,5 @@ services:
       - MONGODB_DATABASE=
       - MONGODB_PORT=27017
       - ADMIN_TOKEN=
+    restart: unless-stopped
+
