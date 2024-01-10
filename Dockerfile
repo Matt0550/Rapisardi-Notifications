@@ -14,36 +14,30 @@ ENV PYTHONDONTWRITEBYTECODE=1
 # the application crashes without emitting any logs due to buffering.
 ENV PYTHONUNBUFFERED=1
 
-WORKDIR /app
+WORKDIR /home
 
-# Create a non-privileged user that the app will run under.
-# See https://docs.docker.com/develop/develop-images/dockerfile_best-practices/#user
-ARG UID=10001
-RUN adduser \
-    --disabled-password \
-    --gecos "" \
-    --home "/nonexistent" \
-    --shell "/sbin/nologin" \
-    --no-create-home \
-    --uid "${UID}" \
-    appuser
+ARG APP_USER=appuser
+ENV APP_USER=${APP_USER}
+ARG APP_UID=1000
+ARG APP_GID=1000
 
-# Download dependencies as a separate step to take advantage of Docker's caching.
-# Leverage a cache mount to /root/.cache/pip to speed up subsequent builds.
-# Leverage a bind mount to requirements.txt to avoid having to copy them into
-# into this layer.
+RUN groupadd -g ${APP_GID} ${APP_USER} && \
+    useradd -u ${APP_UID} -g ${APP_GID} -M -s /usr/sbin/nologin ${APP_USER}
+
+RUN apt-get update && apt-get install -y gosu
+
 RUN --mount=type=cache,target=/root/.cache/pip \
     --mount=type=bind,source=requirements.txt,target=requirements.txt \
     python -m pip install -r requirements.txt
 
-# Switch to the non-privileged user to run the application.
-USER appuser
-
 # Copy the source code into the container.
 COPY . .
+
+RUN chown -R ${APP_USER}:${APP_USER} ./
+
+RUN chmod 755 ./scripts/init.sh
 
 # Expose the port that the application listens on.
 EXPOSE 8000
 
-# Run the application.
-CMD uvicorn 'api:app' --host=0.0.0.0 --port=8000
+ENTRYPOINT [ "/home/scripts/init.sh" ]

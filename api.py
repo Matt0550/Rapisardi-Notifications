@@ -326,4 +326,4 @@ async def update_db(request: Request, response: Response, token: str = Form(...)
 
 # Run the app
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0")
+    uvicorn.run(app, host="0.0.0.0", port=8000)
