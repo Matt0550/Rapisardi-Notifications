@@ -18,5 +18,7 @@ services:
       - MONGODB_DATABASE=
       - MONGODB_PORT=27017
       - ADMIN_TOKEN=
+      - PUID=1000     # UID of the user inside the container, make sure it has access to the database file
+      - PGID=1000     # GID of the user inside the container, make sure it has access to the database file
     restart: unless-stopped
 
