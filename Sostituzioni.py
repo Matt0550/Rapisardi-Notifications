@@ -34,12 +34,19 @@ class Sostituzioni:
             classe = row.find("td").text
             # Get all the td starting from the second
             sostituzioni = [td.text for td in row.find_all("td")[1:]]
+            # Get the docenti assenti, is the last tr
+            docentiAssenti = table.find_all("tr")[-1].find_all("td")[1:]
+            # Strip, replace \n and transform to string
+            docentiAssenti = [td.text.strip().replace("\n", "") for td in docentiAssenti]
+            docentiAssenti = "".join(docentiAssenti)
+
             # Create a dictionary with the data
             data = {
                 "date": date,
                 "ore": ore,
                 "classe": classe,
-                "sostituzioni": sostituzioni
+                "sostituzioni": sostituzioni,
+                "docentiAssenti": docentiAssenti
             }
             result.append(data)
         return result
