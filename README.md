@@ -4,9 +4,9 @@ API per ricevere le sostituzioni dell'Istituto Rapisardi da Vinci. Le sostituzio
 
 API to receive the substitutions of the Rapisardi da Vinci Institute. The substitutions are also sent via email with each new update.
 
-_This project is not affiliated, associated, authorized, endorsed by, or in any way officially connected with the Istituto Rapisardi da Vinci, or any of its subsidiaries or its affiliates. In addition, it uses web scraping techniques that may not be authorized by the Institute._
-
 _Questo progetto non è affiliato, associato, autorizzato, approvato o in alcun modo connesso ufficialmente con l'Istituto Rapisardi da Vinci o con una delle sue sussidiarie o affiliate. Inoltre utilizza delle tecniche di web scraping che potrebbero non essere autorizzate dall'Istituto._
+
+_This project is not affiliated, associated, authorized, endorsed by, or in any way officially connected with the Istituto Rapisardi da Vinci, or any of its subsidiaries or its affiliates. In addition, it uses web scraping techniques that may not be authorized by the Institute._
 
 # Ricevere le notifiche - Receive notifications
 Per ricevere le notifiche, puoi scegliere tra due metodi:
