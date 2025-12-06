@@ -4,7 +4,7 @@
 # If you need more help, visit the Dockerfile reference guide at
 # https://docs.docker.com/engine/reference/builder/
 
-ARG PYTHON_VERSION=3.9.2
+ARG PYTHON_VERSION=3.12
 FROM python:${PYTHON_VERSION}-slim as base
 
 # Prevents Python from writing pyc files.
@@ -24,7 +24,7 @@ ARG APP_GID=1000
 RUN groupadd -g ${APP_GID} ${APP_USER} && \
     useradd -u ${APP_UID} -g ${APP_GID} -M -s /usr/sbin/nologin ${APP_USER}
 
-RUN apt-get update && apt-get install -y gosu
+RUN apt-get update && apt-get install -y gosu cron
 
 RUN --mount=type=cache,target=/root/.cache/pip \
     --mount=type=bind,source=requirements.txt,target=requirements.txt \
@@ -32,6 +32,12 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 
 # Copy the source code into the container.
 COPY . .
+
+# Setup cron
+COPY crontab /etc/cron.d/rapisardi-cron
+RUN chmod 0644 /etc/cron.d/rapisardi-cron && \
+    crontab /etc/cron.d/rapisardi-cron && \
+    touch /var/log/cron.log
 
 RUN chown -R ${APP_USER}:${APP_USER} ./
 

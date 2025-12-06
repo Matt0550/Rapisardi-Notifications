@@ -1,169 +1,168 @@
-# Rapisardi Sostituzioni API & Notifications
 
-API per ricevere le sostituzioni dell'Istituto Rapisardi da Vinci. Le sostituzioni vengono anche inviate tramite email ad ogni nuovo aggiornamento.
+<!-- PROJECT LOGO -->
+<a href="https://github.com/Matt0550/Rapisardi-Notifications">
+  <img src="src/api/static/Banner OG.png">
+</a>
+<br />
+<div align="center">
+  <h3 align="center">Rapisardi Notifications</h3>
 
-API to receive the substitutions of the Rapisardi da Vinci Institute. The substitutions are also sent via email with each new update.
+  <p align="center">
+    An unofficial notification system for ITET Rapisardi da Vinci substitutions and timetables
+    <br />
+    <br />
+    <a href="https://matt05.it/rapisardi-notifications">Try It Now</a>
+    ·
+    <a href="https://github.com/Matt0550/Rapisardi-Notifications/issues">Report Bug</a>
+    ·
+    <a href="https://github.com/Matt0550/Rapisardi-Notifications/issues">Request Feature</a>
+  </p>
 
-_Questo progetto non è affiliato, associato, autorizzato, approvato o in alcun modo connesso ufficialmente con l'Istituto Rapisardi da Vinci o con una delle sue sussidiarie o affiliate. Inoltre utilizza delle tecniche di web scraping che potrebbero non essere autorizzate dall'Istituto._
+  [![Forks][forks-shield]][forks-url]
+  [![Stargazers][stars-shield]][stars-url]
+  [![Issues][issues-shield]][issues-url]
+  [![MIT License][license-shield]][license-url]
+  [![Discord][discord-shield]][discord-url]
+  [![Docker Pulls][docker-shield]][docker-url]
+</div>
 
-_This project is not affiliated, associated, authorized, endorsed by, or in any way officially connected with the Istituto Rapisardi da Vinci, or any of its subsidiaries or its affiliates. In addition, it uses web scraping techniques that may not be authorized by the Institute._
+# Rapisardi Notifications & API
 
-# Ricevere le notifiche - Receive notifications
-Per ricevere le notifiche, puoi scegliere tra due metodi:
-1. Utilizzare il servizio hostato da me - Use the service hosted by me
-2. Hostare il servizio da te - Host the service yourself
+Unofficial API and Notification System for ITET Rapisardi da Vinci substitutions and timetables.
+Get real-time updates about class substitutions, teacher absences, and timetables via API, Email, or Telegram.
 
-Nel primo caso, inviami un'email all'indirizzo [me@matteosillitti.it](mailto:me@matteosillitti.it) con l'indirizzo email a cui vuoi ricevere le notifiche e le classi per le quali vuoi ricevere le notifiche.
+> **Disclaimer**: This project is not affiliated, associated, authorized, endorsed by, or in any way officially connected with the Istituto Rapisardi da Vinci, or any of its subsidiaries or its affiliates. It uses web scraping techniques that may not be authorized by the Institute.
 
-In the first case, send me an email at [me@matteosillitti.it](mailto:me@matteosillitti.it) with the email address you want to receive notifications and the classes for which you want to receive notifications.
+## Features
 
-# Docker compose
+-   **Substitutions API**: Retrieve substitution data for different school locations (Margherita, Turati, Serale).
+-   **Timetable API**: Access timetables for classes, teachers, classrooms, and support teachers.
+-   **Multi-Channel Notifications**:
+    -   **Email**: Receive beautiful, responsive emails (MJML templates) with substitution details.
+    -   **Telegram**: Get instant alerts directly on your Telegram chat.
+-   **Smart Monitoring**:
+    -   **Class Monitoring**: Subscribe to specific classes to get notified about their substitutions.
+    -   **Teacher Monitoring**: Subscribe to specific teachers to get notified if they are absent or if they are substituting in *any* class.
+-   **Web Dashboard**: A user-friendly interface to manage your subscriptions (classes, teachers, Telegram ID).
+-   **Dockerized**: Easy deployment with Docker and Docker Compose, including a native cron job for automatic updates.
 
-```yaml
-version: '3'
+## Getting Started
 
-services:
-  rapisardi-notifications:
-    image: matt0550/rapisardi_notifications
-    ports:
-      - "8000:8000"
-    environment:
-      - SMTP_HOST=
-      - SMTP_PORT=587
-      - SMTP_USERNAME=
-      - SMTP_PASSWORD=
-      - SMTP_SSL=False
-      - SMTP_FROM=
-      - MONGODB_HOST=
-      - MONGODB_USERNAME=
-      - MONGODB_PASSWORD=
-      - MONGODB_DATABASE=
-      - MONGODB_PORT=27017
-      - ADMIN_TOKEN=
-    restart: unless-stopped
-```
+### Prerequisites
 
-## Installazione - Install (Docker)
+-   Docker & Docker Compose (Recommended)
+-   Or Python 3.9+ and MongoDB
 
-1. Installare Docker e Docker Compose - Install Docker and Docker Compose
-2. Clonare il repository - Clone the repository
-3. Creare il file .env con le variabili d'ambiente (vedi sotto) - Create the .env file with the environment variables (see below)
-4. Buildare il container con `docker compose build` - Build the container with `docker compose build`
-5. Avviare il container con `docker compose up -d` - Start the container with `docker compose up -d` 
-6. Aprire il browser all'indirizzo `http://<ip>:8080` - Open the browser at `http://<ip>:8080`
+### Installation (Docker)
 
-## Installazione - Install (Manuale)
+1.  **Clone the repository**:
+    ```bash
+    git clone https://github.com/Matt0550/Rapisardi-Notifications.git
+    cd Rapisardi-Notifications
+    ```
 
-1. Installare Python 3.9 - Install Python 3.9
-2. Clonare il repository - Clone the repository
-3. Creare il file .env con le variabili d'ambiente (vedi sotto) - Create the .env file with the environment variables (see below)
-4. Installare le dipendenze con `pip install -r requirements.txt` - Install the dependencies with `pip install -r requirements.txt`
-5. Avviare il server con `uvicorn api:app --reload` - Start the server with `uvicorn api:app --reload`
+2.  **Configure Environment**:
+    Create a `.env` file based on `example.env` and fill in your details (SMTP, MongoDB, Telegram, etc.).
 
-## Variabili d'ambiente - Environment variables
+3.  **Build and Run**:
+    ```bash
+    docker compose up -d --build
+    ```
 
-| Nome - Name | Descrizione - Description | Default | Obbligatorio - Mandatory |
-| ----------- | ------------------------ | ------- | ----------------------- |
-| `SMTP_HOST` | Host SMTP per l'invio delle email - SMTP host for email sending | `None` | :heavy_check_mark: |
-| `SMTP_PORT` | Porta SMTP per l'invio delle email - SMTP port for email sending | `587` | :heavy_check_mark: |
-| `SMTP_USERNAME` | Username SMTP per l'invio delle email - SMTP username for email sending | `None` | :heavy_check_mark: |
-| `SMTP_PASSWORD` | Password SMTP per l'invio delle email - SMTP password for email sending | `None` | :heavy_check_mark: |
-| `SMTP_SSL` | Abilita SSL per l'invio delle email - Enable SSL for email sending | `True` | :heavy_check_mark: |
-| `SMTP_FROM` | Indirizzo email mittente - Sender email address | `None` | :heavy_check_mark: |
-| `MONGODB_HOST` | Host MongoDB - MongoDB host | `None` | :heavy_check_mark: |
-| `MONGODB_USERNAME` | Username MongoDB - MongoDB username | `None` | :heavy_check_mark: |
-| `MONGODB_PASSWORD` | Password MongoDB - MongoDB password | `None` | :heavy_check_mark: |
-| `MONGODB_DATABASE` | Database MongoDB - MongoDB database | `None` | :heavy_check_mark: |
-| `ADMIN_TOKEN` | Token per l'aggiornamento del database - Token for database update | `None` | :heavy_check_mark: |
+4.  **Access**:
+    -   Dashboard: `http://localhost:8000/v1/dashboard`
+    -   API Docs: `http://localhost:8000/v1/docs`
 
-## Admin token
+### Installation (Manual)
 
-Il token per l'aggiornamento del database può essere generato con il comando `python -c "import secrets; print(secrets.token_urlsafe())"`.
+1.  **Install Dependencies**:
+    ```bash
+    pip install -r requirements.txt
+    ```
 
-The token for database update can be generated with the command `python -c "import secrets; print(secrets.token_urlsafe())"`.
-> [!IMPORTANT]
-> Il token generato non deve contenere caratteri non supportati da JSON.
-> 
-> The generated token must not contain characters not supported by JSON.
+2.  **Configure Environment**:
+    Create a `.env` file with the necessary variables.
 
-## API
+3.  **Run the Server**:
+    ```bash
+    uvicorn src.main:app --reload --host 0.0.0.0 --port 8000
+    ```
 
-Le API Docs sono disponibili all'indirizzo `http://<ip>:8080/docs`.
+## Environment Variables
 
-The API Docs are available at `http://<ip>:8080/docs`.
+| Variable | Description | Required |
+| :--- | :--- | :---: |
+| `SMTP_HOST` | SMTP server host for emails | Yes |
+| `SMTP_PORT` | SMTP server port | Yes |
+| `SMTP_USERNAME` | SMTP username | Yes |
+| `SMTP_PASSWORD` | SMTP password | Yes |
+| `SMTP_FROM` | Sender email address | Yes |
+| `MONGODB_HOST` | MongoDB host address | Yes |
+| `MONGODB_USERNAME` | MongoDB username | Yes |
+| `MONGODB_PASSWORD` | MongoDB password | Yes |
+| `MONGODB_DATABASE` | MongoDB database name | Yes |
+| `TELEGRAM_BOT_TOKEN` | Telegram Bot Token (from @BotFather) | No |
+| `ADMIN_TOKEN` | Token to secure the update endpoint | Yes |
 
-## Database
+## API Documentation
 
-Esempio di database - Example of database:
+The API is documented using OpenAPI (Swagger). You can view the interactive documentation at `/v1/docs`.
 
-Users collection:
-```json
-{
-  "_id": {
-    "$oid": ""
-  },
-  "email": "@gmail.com",
-  "classi": [
-    "5C inf"
-  ],
-  "endpoint": "margherita",
-  "last_sostituzioni": {
-    "5C inf": [
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      ""
-    ]
-  },
-  "last_notification": {
-    "5C inf": {
-      "$date": "2023-12-18T00:00:23.630Z"
-    }
-  }
-}
-```
+### Key Endpoints
 
-Per attivare le notifiche per un singolo utente, aggiungere alla collection `users` un documento con tutti i campi sopra elencati.
+#### Substitutions
+-   `GET /v1/sostituzioni/{sede}/today/{classe}`: Get today's substitutions for a class.
+-   `GET /v1/sostituzioni/{sede}/next/{classe}`: Get next day's substitutions for a class.
+    -   `sede`: `margherita`, `turati`, `serale`
 
-To activate notifications for a single user, add to the `users` collection a document with all the fields listed above.
+#### Timetables (Orario)
+-   `GET /v1/orario/classi/all`: Get all class timetables.
+-   `GET /v1/orario/docenti/all`: Get all teacher timetables.
+-   `GET /v1/orario/aule/all`: Get all classroom timetables.
+-   `GET /v1/orario/sostegno/all`: Get support teacher timetables.
 
-## Notifiche - Notifications
+#### Dashboard
+-   `GET /v1/dashboard`: Access the user dashboard.
 
-Le notifiche vengono inviate tramite email all'indirizzo specificato nel campo `email` del documento nella collection `users`.
+#### Admin
+-   `POST /v1/admin/update_db`: Trigger a manual update check (requires `token` form field matching `ADMIN_TOKEN`).
 
-Tramite un cronjob bisogna inviare una richiesta POST all'endpoint `/admin/update_db` passandogli il token specificato nel campo `ADMIN_TOKEN` delle variabili d'ambiente come parametro `token` (Form). Nella mia configurazione, il cronjob viene eseguito ogni ora.
+## Notifications & Automation
 
-Notifications are sent via email to the address specified in the `email` field of the document in the `users` collection.
+The system is designed to check for updates automatically.
+-   **Docker**: The container includes a cron job that runs the update script every 30 minutes (Mon-Fri).
+-   **Manual**: You can trigger an update via the `/v1/admin/update_db` endpoint.
 
-Through a cronjob you have to send a POST request to the `/admin/update_db` endpoint passing the token specified in the `ADMIN_TOKEN` field of the environment variables as the `token` parameter (Form). In my configuration, the cronjob is executed every hour.
+### Telegram Setup
+1.  Create a bot with [@BotFather](https://t.me/BotFather) and get the token.
+2.  Set `TELEGRAM_BOT_TOKEN` in your `.env`.
+3.  Users can find their Chat ID via [@userinfobot](https://t.me/userinfobot) and save it in the Dashboard.
 
-## Dashboard - Alpha (WIP)
-
-La dashboard è disponibile all'indirizzo `http://<ip>:8080/dashboard`.
-
-Tramite la dashboard è possibile da parte dell'utente aggiungere o rimuovere le classi per le quali ricevere le notifiche.
-
-The dashboard is available at `http://<ip>:8080/dashboard`.
-
-Through the dashboard the user can add or remove the classes for which to receive notifications.
-
-## Licenza - License
+## License
 
 [MIT](https://choosealicense.com/licenses/mit/)
 
-## Contribuire - Contributing
+## Support
 
-Le pull request sono benvenute. Per modifiche importanti, aprire prima un issue per discutere di cosa si vuole cambiare.
-
-Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
-
-## Supportami - Support me
+If you find this project useful, consider supporting it!
 
 [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/matt05)
 
 [![buy-me-a-coffee](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/Matt0550)
 
 [![paypal](https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif)](https://paypal.me/sillittimatteo)
+
+[contributors-shield]: https://img.shields.io/github/contributors/Matt0550/Rapisardi-Notifications.svg
+[contributors-url]: https://github.com/Matt0550/Rapisardi-Notifications/graphs/contributors
+[forks-shield]: https://img.shields.io/github/forks/Matt0550/Rapisardi-Notifications.svg
+[forks-url]: https://github.com/Matt0550/Rapisardi-Notifications/network/members
+[stars-shield]: https://img.shields.io/github/stars/Matt0550/Rapisardi-Notifications.svg?
+[stars-url]: https://github.com/Matt0550/Rapisardi-Notifications/stargazers
+[issues-shield]: https://img.shields.io/github/issues/Matt0550/Rapisardi-Notifications.svg
+[issues-url]: https://github.com/Matt0550/Rapisardi-Notifications/issues
+[license-shield]: https://img.shields.io/github/license/Matt0550/Rapisardi-Notifications.svg
+[license-url]: https://github.com/Matt0550/Rapisardi-Notifications/blob/master/LICENSE
+[discord-shield]: https://img.shields.io/discord/828990499507404820
+[discord-url]: https://discord.gg/5WrVyQKWAr
+[docker-shield]: https://img.shields.io/docker/pulls/matt0550/rapisardi_notifications
+[docker-url]: https://hub.docker.com/r/matt0550/rapisardi_notifications

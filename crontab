@@ -1,0 +1,1 @@
+*/30 * * * * root cd /home && /usr/local/bin/python -m src.core.update_db > /proc/1/fd/1 2>/proc/1/fd/2

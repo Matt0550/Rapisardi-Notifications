@@ -79,15 +79,30 @@
                                             class="border border-gray-300 rounded-lg px-3 py-2 mt-1 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent"
                                             value="{{ user.email }}" disabled>
                                     </div>
-                                    <!-- Each classe in user["classi"] create a row with the name of the clòass and a icon to delete the class -->
+                                    
+                                    <form action="" method="POST" class="mt-4">
+                                        <div class="flex flex-col">
+                                            <label for="telegram_chat_id" class="text-sm font-medium text-gray-700">Telegram Chat ID</label>
+                                            <div class="flex gap-2">
+                                                <input type="text" name="telegram_chat_id" id="telegram_chat_id" placeholder="Inserisci il tuo Chat ID"
+                                                    class="border border-gray-300 rounded-lg px-3 py-2 mt-1 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent flex-grow"
+                                                    value="{{ user.telegram_chat_id if user.telegram_chat_id else '' }}">
+                                                <input type="hidden" name="email" value="{{ user.email }}">
+                                                <button class="btn btn-primary mt-1" type="submit">Salva</button>
+                                            </div>
+                                            <p class="text-xs text-gray-500 mt-1">Puoi ottenere il tuo Chat ID avviando una chat con @userinfobot su Telegram.</p>
+                                        </div>
+                                    </form>
+
+                                    <!-- Each classe in user.classi create a row with the name of the clòass and a icon to delete the class -->
                                     <h2 class="text-xl font-medium text-gray-700 my-2">Classi con attive le notifiche
                                     </h2>
-                                    {% if user["classi"]|length == 0 %}
+                                    {% if user.classi|length == 0 %}
                                     <p class="text-sm font-medium text-gray-700 my-2">Non hai nessuna classe con le
                                         notifiche attive</p>
                                     {% endif %}
 
-                                    {% for classe in user["classi"] %}
+                                    {% for classe in user.classi %}
                                    
                                     <div class="flex flex-col items-center gap-4">
                                         <div class="flex flex-row gap-3">
@@ -125,6 +140,52 @@
                                             </button>
                                         </div>
                                     </form>
+
+                                    <!-- Teachers Section -->
+                                    <h2 class="text-xl font-medium text-gray-700 my-2 mt-6">Docenti monitorati</h2>
+                                    {% if not user.watched_teachers or user.watched_teachers|length == 0 %}
+                                    <p class="text-sm font-medium text-gray-700 my-2">Non stai monitorando nessun docente</p>
+                                    {% endif %}
+
+                                    {% for teacher in user.watched_teachers %}
+                                    <div class="flex flex-col items-center gap-4">
+                                        <div class="flex flex-row gap-3">
+                                            <input type="text" placeholder="Docente"
+                                                class="border border-gray-300 rounded-lg px-3 py-2 mt-1 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+                                                value="{{ teacher }}" disabled>
+                                            <form action="" method="POST">
+                                                <input type="hidden" name="teacher" value="{{ teacher }}">
+                                                <input type="hidden" name="delete" value="true">
+                                                <input type="hidden" name="email" value="{{ user.email }}">
+                                                <button class="btn btn-primary" type="submit">
+                                                    <svg xmlns="http://www.w3.org/2000/svg"
+                                                        class="stroke-current shrink-0 h-6 w-6" fill="none"
+                                                        viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                                            stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                                    </svg>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+
+                                    <!-- Form to add a teacher -->
+                                    <form action="" method="POST" class="mt-4">
+                                        <input type="hidden" name="delete" value="false">
+                                        <input type="hidden" name="email" value="{{ user.email }}">
+                                        <div class="flex flex-col">
+                                            <label for="teacher" class="text-sm font-medium text-gray-700">Aggiungi docente</label>
+                                            <input type="text" required name="teacher" id="teacher" placeholder="Cognome Docente"
+                                                class="border border-gray-300 rounded-lg px-3 py-2 mt-1 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent">
+                                        </div>
+                                        <div class="flex flex-col pt-2 max-w-xs mx-auto">
+                                            <button class="btn btn-primary" type="submit">
+                                                Aggiungi
+                                            </button>
+                                        </div>
+                                    </form>
+
                                 </div>
 
 

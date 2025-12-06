@@ -6,19 +6,28 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - SMTP_HOST=
-      - SMTP_PORT=587
-      - SMTP_USERNAME=
-      - SMTP_PASSWORD=
-      - SMTP_SSL=False
-      - SMTP_FROM=
-      - MONGODB_HOST=
-      - MONGODB_USERNAME=
-      - MONGODB_PASSWORD=
-      - MONGODB_DATABASE=
-      - MONGODB_PORT=27017
-      - ADMIN_TOKEN=
-      - PUID=1000     # UID of the user inside the container, make sure it has access to the database file
-      - PGID=1000     # GID of the user inside the container, make sure it has access to the database file
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=${SMTP_PORT}
+      - SMTP_USERNAME=${SMTP_USERNAME}
+      - SMTP_PASSWORD=${SMTP_PASSWORD}
+      - SMTP_SSL=${SMTP_SSL}
+      - SMTP_FROM=${SMTP_FROM}
+      - MONGODB_HOST=${MONGODB_HOST}
+      - MONGODB_USERNAME=${MONGODB_USERNAME}
+      - MONGODB_PASSWORD=${MONGODB_PASSWORD}
+      - MONGODB_DATABASE=${MONGODB_DATABASE}
+      - MONGODB_PORT=${MONGODB_PORT}
+      - ADMIN_TOKEN=${ADMIN_TOKEN}
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - HOST=${HOST}
+      - PORT=${PORT}
+      - WORKERS=${WORKERS}
+      - BACKEND_CORS_ORIGINS=${BACKEND_CORS_ORIGINS}
+      - ENABLE_RATE_LIMITING=${ENABLE_RATE_LIMITING}
+      - SOSTITUZIONI_MARGHERITA_URL=${SOSTITUZIONI_MARGHERITA_URL}
+      - SOSTITUZIONI_TURATI_URL=${SOSTITUZIONI_TURATI_URL}
+      - SOSTITUZIONI_SERALE_URL=${SOSTITUZIONI_SERALE_URL}
+      - ORARIO_URL=${ORARIO_URL}
+      - PUID=1000
+      - PGID=1000
     restart: unless-stopped
-

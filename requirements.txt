@@ -8,3 +8,4 @@ uvicorn
 pymongo
 jinja2
 python-multipart
+pydantic_settings
