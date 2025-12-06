@@ -103,6 +103,7 @@ Get real-time updates about class substitutions, teacher absences, and timetable
 | `MONGODB_DATABASE` | MongoDB database name | Yes |
 | `TELEGRAM_BOT_TOKEN` | Telegram Bot Token (from @BotFather) | No |
 | `ADMIN_TOKEN` | Token to secure the update endpoint | Yes |
+| `HEALTHCHECK_URL` | URL for healthcheck pings | No |
 
 ## API Documentation
 
@@ -130,7 +131,7 @@ The API is documented using OpenAPI (Swagger). You can view the interactive docu
 ## Notifications & Automation
 
 The system is designed to check for updates automatically.
--   **Docker**: The container includes a cron job that runs the update script every 30 minutes (Mon-Fri).
+-   **Docker**: The container includes a cron job that runs the update script every 45 minutes (Mon-Fri).
 -   **Manual**: You can trigger an update via the `/v1/admin/update_db` endpoint.
 
 ### Telegram Setup
