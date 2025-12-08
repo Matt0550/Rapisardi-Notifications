@@ -87,11 +87,13 @@ class Updater:
         
         last_sostituzioni = user.last_sostituzioni
         last_notification = user.last_notification
-        classi = user.classi
-        watched_teachers = user.watched_teachers
         
-        # Clean up old keys
-        all_keys = set(classi) | set(watched_teachers)
+        # Collect all keys from subscriptions
+        all_keys = set()
+        for c in user.classi:
+            all_keys.add(f"{c.name}|{c.sede}")
+        for t in user.watched_teachers:
+            all_keys.add(f"{t.name}|{t.sede}")
         
         for key in all_keys:
             if key not in last_sostituzioni:
@@ -233,8 +235,10 @@ class Updater:
         last_notification = user_data.last_notification
         last_sostituzioni = user_data.last_sostituzioni
         
-        last_sent = last_notification.get(key, datetime.now())
-        last_content = last_sostituzioni.get(key, "")
+        composite_key = f"{key}|{sede}"
+        
+        last_sent = last_notification.get(composite_key, datetime.now())
+        last_content = last_sostituzioni.get(composite_key, "")
         
         # If content is list (from class update), convert to string for comparison
         if isinstance(content_hash, list):
@@ -243,31 +247,25 @@ class Updater:
             last_content = str(last_content)
 
         if last_content == content_hash and last_sent.date() == datetime.now().date():
-            logger.info(f"Email already sent to {email} for {key}")
+            logger.info(f"Email already sent to {email} for {composite_key}")
             return False
         
         self.send_email(email, subject, html_content, True)
         
         self.db.update_user_one({"_id": ObjectId(user_data.id)}, {
             "$set": {
-                f"last_notification.{key}": datetime.now(),
-                f"last_sostituzioni.{key}": content_hash
+                f"last_notification.{composite_key}": datetime.now(),
+                f"last_sostituzioni.{composite_key}": content_hash
             }
         })
-        logger.info(f"Email sent to {email} for {key}")
+        logger.info(f"Email sent to {email} for {composite_key}")
         return True
 
     def check_updates(self):
         sedi = ["margherita", "turati", "serale"]
         
-        total_users = 0
-        for sede in sedi:
-            users = list(self.db.get_users_by_endpoint(sede))
-            total_users += len(users)
-            
-        if total_users == 0:
-            logger.warning("No users found in the database")
-            return False
+        # We can't easily count total users per sede anymore without querying, but let's just check if any user exists
+        # Actually, let's just proceed. If no users, the loop below will just be empty.
 
         now = datetime.now()
         get_today = 8 <= now.hour <= 14
@@ -290,24 +288,22 @@ class Updater:
                 docenti_assenti = updates[0]["docentiAssenti"]
                 date = updates[0]["date"]
 
-                # 2. Check for teacher updates
-                # Find users who have watched_teachers not empty
-                # Since we are iterating over all users anyway (get_users_by_endpoint), we can just check the user object
-                # But wait, the previous loop was iterating over updates, not users.
-                
-                # Let's iterate over all users for this endpoint once
-                users = list(self.db.get_users_by_endpoint(sede))
+                # Get users interested in this sede
+                users = list(self.db.get_users_interested_in_sede(sede))
                 
                 for user in users:
                     # Check class updates
                     for update in updates:
-                        if update["classe"] in user.classi:
-                            self.check_update_for_user(update, user, sede)
+                        # Check if user has this class AND for this sede
+                        for user_class in user.classi:
+                            if user_class.name == update["classe"] and user_class.sede == sede:
+                                self.check_update_for_user(update, user, sede)
                     
                     # Check teacher updates
                     if user.watched_teachers:
                         for teacher in user.watched_teachers:
-                            self.check_teacher_update_for_user(user, teacher, updates, docenti_assenti, date, sede)
+                            if teacher.sede == sede:
+                                self.check_teacher_update_for_user(user, teacher.name, updates, docenti_assenti, date, sede)
 
             except Exception as e:
                 logger.error(f"Error fetching updates for {sede}: {e}")
