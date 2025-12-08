@@ -9,12 +9,17 @@ from fastapi import APIRouter, Form
 from fastapi.requests import Request
 from fastapi.responses import Response
 from starlette.templating import Jinja2Templates
+from pathlib import Path
 
 from core.db import Database
 from core.logger_base import logger
 
 router = APIRouter()
-templates = Jinja2Templates("api/templates")
+# Get the absolute path to the templates directory
+# Current file: src/api/routes/dashboard.py
+# Templates: src/api/templates
+templates_dir = Path(__file__).resolve().parent.parent / "templates"
+templates = Jinja2Templates(directory=str(templates_dir))
 
 database = Database()
 

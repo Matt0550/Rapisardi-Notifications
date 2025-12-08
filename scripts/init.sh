@@ -1,7 +1,9 @@
 #!/bin/bash
 
 # Export env vars for cron
-printenv > /etc/environment
+# Filter out LANG to avoid warning about /etc/environment deprecation for locale
+printenv | grep -v "^LANG=" > /etc/environment
+
 # Start cron
 service cron start
 

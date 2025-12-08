@@ -12,10 +12,13 @@ from slowapi import Limiter
 from slowapi.middleware import SlowAPIMiddleware
 from slowapi.util import get_remote_address
 from typing import Any
+from contextlib import asynccontextmanager
 
 from core.config import settings
 from core.logger_base import logger
 from api.routes import sostituzioni, orario, dashboard, admin
+from core.update_db import Updater
+import threading
 
 from pydantic import BaseModel
 load_dotenv()
@@ -39,6 +42,17 @@ class ResponseStructure(BaseModel):
     success: bool = True
     status_code: int
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    logger.info("Starting up: Checking for updates...")
+    try:
+        updater = Updater()
+        # Run in a separate thread to avoid blocking the event loop
+        thread = threading.Thread(target=updater.check_updates)
+        thread.start()
+    except Exception as e:
+        logger.error(f"Error during startup update check: {e}")
+    yield
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -48,7 +62,9 @@ app = FastAPI(
     generate_unique_id_function=custom_generate_unique_id,
     default_response_class=CustomResponse,
     version=settings.API_VERSION,
+    lifespan=lifespan,
 )
+
 
 
 cors_origins = settings.BACKEND_CORS_ORIGINS if settings.BACKEND_CORS_ORIGINS else []
