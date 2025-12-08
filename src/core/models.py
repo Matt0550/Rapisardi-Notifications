@@ -12,6 +12,7 @@ class User(BaseModel):
     watched_teachers: List[str] = []
     endpoint: str = "margherita"
     telegram_chat_id: Optional[str] = None
+    fuzzy_teacher_matching: bool = False
     last_sostituzioni: Dict[str, Any] = {}
     last_notification: Dict[str, datetime] = {}
 

@@ -28,6 +28,13 @@ services:
       - SOSTITUZIONI_TURATI_URL=${SOSTITUZIONI_TURATI_URL}
       - SOSTITUZIONI_SERALE_URL=${SOSTITUZIONI_SERALE_URL}
       - ORARIO_URL=${ORARIO_URL}
+      - HEALTHCHECK_URL=${HEALTHCHECK_URL}
       - PUID=1000
       - PGID=1000
+      - TZ=Europe/Rome
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/v1/status"]
+      interval: 1m30s
+      timeout: 10s
+      retries: 3
     restart: unless-stopped

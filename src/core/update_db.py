@@ -15,10 +15,16 @@ from scrapers.sostituzioni import Sostituzioni
 from jinja2 import Environment, FileSystemLoader
 from bson import ObjectId
 
+import os
+
 class Updater:
     def __init__(self):
         self.db = Database()
-        self.template_env = Environment(loader=FileSystemLoader("src/api/templates"))
+        # Get the directory of the current file
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        # Go up one level to src, then to api/templates
+        template_dir = os.path.join(current_dir, "..", "api", "templates")
+        self.template_env = Environment(loader=FileSystemLoader(template_dir))
         if not settings.SMTP_PASSWORD:
             logger.warning("SMTP password not set")
 
@@ -137,9 +143,9 @@ class Updater:
             docenti_assenti=update["docentiAssenti"]
         )
         
-        self.send_email_to_user(user, html_content, update["sostituzioni"], update["date"], sede, update["classe"], f"Aggiornamento classe {update['classe']}")
+        sent = self.send_email_to_user(user, html_content, update["sostituzioni"], update["date"], sede, update["classe"], f"Aggiornamento classe {update['classe']}")
         
-        if user.telegram_chat_id:
+        if user.telegram_chat_id and sent:
             telegram_message = f"<b>Aggiornamento sostituzioni</b>\n\nData: {update['date']}\nClasse: {update['classe']} ({sede})\n\n"
             for i in range(len(update["ore"])):
                 telegram_message += f"<b>{update['ore'][i]}</b>: {update['sostituzioni'][i]}\n"
@@ -152,16 +158,37 @@ class Updater:
         self.adapt_db_user(user)
         
         found_updates = []
-        is_absent = teacher.lower() in docenti_assenti.lower()
         
+        def is_match(query, target):
+            if getattr(user, "fuzzy_teacher_matching", False):
+                query_parts = query.lower().split()
+                target_lower = target.lower()
+                return all(part in target_lower for part in query_parts)
+            else:
+                return query.lower() in target.lower()
+
+        is_absent = is_match(teacher, docenti_assenti)
+        
+        real_teacher_name = teacher
+        
+        if is_absent:
+            # Try to find the real name in docenti_assenti
+            parts = docenti_assenti.split("-")
+            for part in parts:
+                if is_match(teacher, part.strip()):
+                    real_teacher_name = part.strip()
+                    break
+
         for update in updates:
             for i, sost in enumerate(update["sostituzioni"]):
-                if teacher.lower() in sost.lower():
+                if is_match(teacher, sost):
                     found_updates.append({
                         "ora": update["ore"][i],
                         "sostituzione": sost,
                         "classe": update["classe"]
                     })
+                    if not is_absent:
+                        real_teacher_name = sost
         
         if not found_updates and not is_absent:
             return
@@ -170,7 +197,7 @@ class Updater:
         content_hash = str(found_updates) + str(is_absent)
         
         template = self.template_env.get_template("email_notification.html")
-        message_intro = f"Ci sono aggiornamenti per il docente {teacher}."
+        message_intro = f"Ci sono aggiornamenti per il docente {real_teacher_name}."
         if is_absent:
             message_intro += " Il docente risulta ASSENTE."
             
@@ -183,16 +210,16 @@ class Updater:
             docenti_assenti=docenti_assenti if is_absent else None
         )
         
-        subject = f"Aggiornamento docente {teacher}"
+        subject = f"Aggiornamento docente {real_teacher_name}"
         if is_absent:
             subject += " (ASSENTE)"
             
-        self.send_email_to_user(user, html_content, content_hash, date, sede, teacher, subject)
+        sent = self.send_email_to_user(user, html_content, content_hash, date, sede, teacher, subject)
         
-        if user.telegram_chat_id:
+        if user.telegram_chat_id and sent:
             telegram_message = f"<b>{subject}</b>\n\nData: {date} ({sede})\n"
             if is_absent:
-                telegram_message += f"\n⚠️​ <b>Il docente {teacher} risulta ASSENTE</b>\n"
+                telegram_message += f"\n⚠️​ <b>Il docente {real_teacher_name} risulta ASSENTE</b>\n"
             
             if found_updates:
                 telegram_message += "\n<b>Sostituzioni trovate:</b>\n"

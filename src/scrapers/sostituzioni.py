@@ -6,6 +6,7 @@
 
 import requests
 from bs4 import BeautifulSoup
+import re
 
 class Sostituzioni:
     def __init__(self, url):
@@ -37,8 +38,9 @@ class Sostituzioni:
             # Get the docenti assenti, is the last tr
             docentiAssenti = table.find_all("tr")[-1].find_all("td")[1:]
             # Strip, replace \n and transform to string
-            docentiAssenti = [td.text.strip().replace("\n", "") for td in docentiAssenti]
-            docentiAssenti = "".join(docentiAssenti)
+            docentiAssenti = [td.text.strip().replace("\n", " ") for td in docentiAssenti]
+            docentiAssenti = " ".join(docentiAssenti)
+            docentiAssenti = re.sub(r'\s+', ' ', docentiAssenti).strip()
 
             # Create a dictionary with the data
             data = {
@@ -77,8 +79,9 @@ class Sostituzioni:
             # Get the docenti assenti, is the last tr
             docentiAssenti = table.find_all("tr")[-1].find_all("td")[1:]
             # Strip, replace \n and transform to string
-            docentiAssenti = [td.text.strip().replace("\n", "") for td in docentiAssenti]
-            docentiAssenti = "".join(docentiAssenti)       
+            docentiAssenti = [td.text.strip().replace("\n", " ") for td in docentiAssenti]
+            docentiAssenti = " ".join(docentiAssenti)
+            docentiAssenti = re.sub(r'\s+', ' ', docentiAssenti).strip()
 
 
             # Create a dictionary with the data

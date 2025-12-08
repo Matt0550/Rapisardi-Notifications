@@ -24,7 +24,7 @@ def dashboard_ui(request: Request, response: Response):
     return templates.TemplateResponse("dashboard.html", {"request": request})
 
 @router.post("/")
-def dashboard_edit(request: Request, response: Response, email: str = Form(...), classe: str = Form(None), teacher: str = Form(None), delete: str = Form(None), telegram_chat_id: str = Form(None)):
+def dashboard_edit(request: Request, response: Response, email: str = Form(...), classe: str = Form(None), teacher: str = Form(None), delete: str = Form(None), telegram_chat_id: str = Form(None), fuzzy_teacher_matching: str = Form(None), update_settings: str = Form(None)):
     # Check if email in form
     if email is None or email == "":
         return templates.TemplateResponse("dashboard.html", {"request": request, "error": "Email not set"})
@@ -36,10 +36,18 @@ def dashboard_edit(request: Request, response: Response, email: str = Form(...),
     # Check if email is already in the database
     user = database.get_user_by_email(email)
     if user is not None:
-        # Update telegram chat id if provided
-        if telegram_chat_id is not None:
-            database.update_telegram_chat_id(email, telegram_chat_id)
+        # Update settings if requested
+        if update_settings == "true":
+            if telegram_chat_id is not None:
+                database.update_telegram_chat_id(email, telegram_chat_id)
+            
+            # Handle fuzzy matching checkbox
+            # If checkbox is checked, fuzzy_teacher_matching will be "on" (or whatever value), if not, it will be None
+            is_fuzzy = fuzzy_teacher_matching is not None
+            database.update_fuzzy_matching(email, is_fuzzy)
+            
             user = database.get_user_by_email(email) # Refresh user data
+            return templates.TemplateResponse("dashboard.html", {"request": request, "user": user, "success": "Settings updated"})
 
         if delete is not None and (delete == "true" or delete is True):
             if classe:

@@ -34,6 +34,10 @@ class Database:
         self.users_collection.update_one({"email": email}, {"$set": {"telegram_chat_id": chat_id}})
         return True
 
+    def update_fuzzy_matching(self, email, fuzzy_matching):
+        self.users_collection.update_one({"email": email}, {"$set": {"fuzzy_teacher_matching": fuzzy_matching}})
+        return True
+
     def add_teacher_to_user(self, email, teacher):
         self.users_collection.update_one({"email": email}, {"$push": {"watched_teachers": teacher}})
         return True
