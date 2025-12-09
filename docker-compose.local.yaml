@@ -1,6 +1,6 @@
 services:
   rapisardi-notifications:
-    image: matt0550/rapisardi_notifications
+    build: .
     ports:
       - "8000:8000"
     environment:

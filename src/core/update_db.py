@@ -273,6 +273,7 @@ class Updater:
 
         for sede in sedi:
             url = self.from_sede_to_url(sede)
+            logger.info(f"Fetching updates for sede {sede} from {url}")
             scraper = Sostituzioni(url)
             
             try:
@@ -311,10 +312,12 @@ class Updater:
                 traceback.print_exc()
 
         try:
+            logger.info("Pinging healthcheck URL")
             requests.get(settings.HEALTHCHECK_URL, timeout=10)
         except Exception:
             pass
-            
+        
+        logger.info("Update check completed")
         return True
 
     def close(self):
@@ -324,6 +327,7 @@ def checkUpdates():
     updater = Updater()
     try:
         updater.check_updates()
+        logger.info("Updater completed successfully")
     finally:
         updater.close()
 

@@ -24,7 +24,10 @@ ARG APP_GID=1000
 RUN groupadd -g ${APP_GID} ${APP_USER} && \
     useradd -u ${APP_UID} -g ${APP_GID} -M -s /usr/sbin/nologin ${APP_USER}
 
-RUN apt-get update && apt-get install -y gosu cron curl
+RUN apt-get update && apt-get install -y gosu cron curl dos2unix procps
+
+# Fix for cron in docker (pam_loginuid)
+RUN sed -i 's/pam_loginuid.so/pam_loginuid.so optional/g' /etc/pam.d/cron
 
 RUN --mount=type=cache,target=/root/.cache/pip \
     --mount=type=bind,source=requirements.txt,target=requirements.txt \
@@ -35,9 +38,12 @@ COPY . .
 
 # Setup cron
 COPY crontab /etc/cron.d/rapisardi-cron
-RUN chmod 0644 /etc/cron.d/rapisardi-cron && \
-    crontab /etc/cron.d/rapisardi-cron && \
+RUN dos2unix /etc/cron.d/rapisardi-cron && \
+    chmod 0644 /etc/cron.d/rapisardi-cron && \
     touch /var/log/cron.log
+
+# Ensure cron log file exists and has correct permissions
+RUN touch /var/log/cron.log && chmod 0666 /var/log/cron.log
 
 RUN chown -R ${APP_USER}:${APP_USER} ./
 
